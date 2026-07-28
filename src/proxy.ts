@@ -9,16 +9,18 @@ function isPublic(pathname: string) {
   return false;
 }
 
-// Optimistic check only (no DB access — proxy runs on the Edge runtime).
-// The authoritative check happens in the (app) layout via getSession().
+// Optimistic check only (no DB access — proxy runs on the Edge runtime, and
+// cookie *presence* doesn't mean the session is actually valid — e.g. after
+// authSecret changes, a stale cookie is still "present"). The authoritative
+// check happens server-side via getSession(): the (app) layout for protected
+// routes, and the /login page itself for the redirect-away-if-already-logged-in
+// case. Redirecting away from /login based on presence alone would loop
+// forever against an invalid cookie, so this middleware never does that.
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hasSession = request.cookies.has("session");
 
   if (isPublic(pathname)) {
-    if (pathname === "/login" && hasSession) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
     return NextResponse.next();
   }
 

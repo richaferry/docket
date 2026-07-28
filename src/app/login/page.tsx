@@ -1,11 +1,17 @@
 import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
 import { isOnboarded } from "@/lib/settings";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginForm } from "./login-form";
 
-export default function LoginPage() {
+export default async function LoginPage() {
   if (!isOnboarded()) {
     redirect("/setup");
+  }
+
+  const session = await getSession();
+  if (session) {
+    redirect("/");
   }
 
   return (
