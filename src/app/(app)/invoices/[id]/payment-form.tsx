@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useRef, useEffect } from "react";
+import { useActionState, useRef, useEffect, useState } from "react";
 import { recordPayment, deletePayment } from "@/actions/invoices";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { formatDate, formatMoney, todayISO } from "@/lib/utils";
 import { Trash2 } from "lucide-react";
 
@@ -19,6 +20,15 @@ export function PaymentForm({
   const action = recordPayment.bind(null, invoiceId);
   const [state, formAction, pending] = useActionState(action, undefined);
   const formRef = useRef<HTMLFormElement>(null);
+  const [amount, setAmount] = useState(0);
+
+  // Reset the amount during render (per React's guidance for state resets on
+  // prop/state change) rather than in an effect, to avoid an extra render pass.
+  const [lastHandledState, setLastHandledState] = useState(state);
+  if (state !== lastHandledState) {
+    setLastHandledState(state);
+    if (state?.success) setAmount(0);
+  }
 
   useEffect(() => {
     if (state?.success) {
@@ -30,12 +40,12 @@ export function PaymentForm({
     <form ref={formRef} action={formAction} className="flex flex-col gap-3 p-4">
       <div className="grid grid-cols-2 gap-3">
         <Field label="Amount" htmlFor="payment-amount">
-          <Input
+          <CurrencyInput
             id="payment-amount"
             name="amount"
-            type="number"
-            min="0"
-            step="any"
+            currency={currency}
+            value={amount}
+            onValueChange={setAmount}
             placeholder={remaining.toString()}
             required
           />

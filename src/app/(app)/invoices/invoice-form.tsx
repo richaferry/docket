@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { formatMoney, todayISO, daysFromNowISO } from "@/lib/utils";
 import { CURRENCIES } from "@/lib/currencies";
 import { PAYMENT_TERMS, paymentTermsDays } from "@/lib/payment-terms";
@@ -250,14 +251,12 @@ export function InvoiceForm({
                     <label className="sr-only" htmlFor={`item-rate-${index}`}>
                       Item {index + 1} rate
                     </label>
-                    <input
+                    <CurrencyInput
                       id={`item-rate-${index}`}
-                      type="number"
-                      min="0"
-                      step="any"
-                      className="w-full bg-transparent text-sm outline-none font-tabular"
-                      value={item.unitPrice}
-                      onChange={(e) => updateItem(index, { unitPrice: e.target.value })}
+                      bare
+                      currency={currency}
+                      value={Number(item.unitPrice) || 0}
+                      onValueChange={(v) => updateItem(index, { unitPrice: String(v) })}
                     />
                   </td>
                   <td className="px-3 py-2 text-right font-tabular text-ink">
@@ -298,14 +297,12 @@ export function InvoiceForm({
               />
             </Field>
             <Field label="Discount" htmlFor="discount">
-              <Input
+              <CurrencyInput
                 id="discount"
                 name="discount"
-                type="number"
-                min="0"
-                step="any"
+                currency={currency}
                 value={discount}
-                onChange={(e) => setDiscount(Number(e.target.value) || 0)}
+                onValueChange={setDiscount}
               />
             </Field>
           </div>
