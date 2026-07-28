@@ -26,7 +26,16 @@ export const activities = sqliteTable("activities", {
     .notNull()
     .references(() => clients.id, { onDelete: "cascade" }),
   type: text("type", {
-    enum: ["note", "call", "email", "meeting", "invoice_sent", "invoice_paid", "status_change"],
+    enum: [
+      "note",
+      "call",
+      "email",
+      "meeting",
+      "invoice_sent",
+      "invoice_paid",
+      "payment_received",
+      "status_change",
+    ],
   }).notNull(),
   content: text("content").notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" })
@@ -55,6 +64,7 @@ export const invoices = sqliteTable("invoices", {
   discount: real("discount").notNull().default(0),
   subtotal: real("subtotal").notNull().default(0),
   total: real("total").notNull().default(0),
+  amountPaid: real("amount_paid").notNull().default(0),
   notes: text("notes"),
   terms: text("terms"),
   sentAt: integer("sent_at", { mode: "timestamp_ms" }),
@@ -63,6 +73,19 @@ export const invoices = sqliteTable("invoices", {
     .notNull()
     .default(sql`(unixepoch('subsec') * 1000)`),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .notNull()
+    .default(sql`(unixepoch('subsec') * 1000)`),
+});
+
+export const payments = sqliteTable("payments", {
+  id: text("id").primaryKey(),
+  invoiceId: text("invoice_id")
+    .notNull()
+    .references(() => invoices.id, { onDelete: "cascade" }),
+  amount: real("amount").notNull(),
+  paidAt: integer("paid_at", { mode: "timestamp_ms" }).notNull(),
+  note: text("note"),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
     .notNull()
     .default(sql`(unixepoch('subsec') * 1000)`),
 });

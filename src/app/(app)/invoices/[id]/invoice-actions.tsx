@@ -6,6 +6,9 @@ import { Button, LinkButton } from "@/components/ui/button";
 import { sendInvoice, markInvoicePaid, cancelInvoice, reopenInvoice } from "@/actions/invoices";
 import type { DisplayStatus } from "@/lib/invoices";
 
+const OPEN_STATUSES: DisplayStatus[] = ["draft", "sent", "overdue", "partial"];
+const UNPAID_UNSENT_STATUSES: DisplayStatus[] = ["sent", "overdue", "partial"];
+
 export function InvoiceActions({
   id,
   status,
@@ -17,6 +20,9 @@ export function InvoiceActions({
 }) {
   const boundSend = sendInvoice.bind(null, id);
   const [sendState, sendAction, sending] = useActionState(boundSend, undefined);
+
+  const boundCancel = cancelInvoice.bind(null, id);
+  const [cancelState, cancelAction, cancelling] = useActionState(boundCancel, undefined);
 
   return (
     <div className="flex flex-col items-start gap-2 sm:items-end">
@@ -31,7 +37,7 @@ export function InvoiceActions({
           <Download size={14} aria-hidden="true" /> PDF
         </LinkButton>
 
-        {(status === "draft" || status === "sent" || status === "overdue") && (
+        {OPEN_STATUSES.includes(status) && (
           <form action={sendAction}>
             <Button type="submit" size="sm" disabled={sending}>
               <Send size={14} aria-hidden="true" />{" "}
@@ -40,7 +46,7 @@ export function InvoiceActions({
           </form>
         )}
 
-        {(status === "sent" || status === "overdue") && (
+        {UNPAID_UNSENT_STATUSES.includes(status) && (
           <form action={markInvoicePaid.bind(null, id)}>
             <Button type="submit" variant="secondary" size="sm">
               <CheckCircle2 size={14} aria-hidden="true" /> Mark paid
@@ -49,9 +55,9 @@ export function InvoiceActions({
         )}
 
         {status !== "cancelled" && status !== "paid" && (
-          <form action={cancelInvoice.bind(null, id)}>
-            <Button type="submit" variant="ghost" size="sm">
-              <Ban size={14} aria-hidden="true" /> Cancel
+          <form action={cancelAction}>
+            <Button type="submit" variant="ghost" size="sm" disabled={cancelling}>
+              <Ban size={14} aria-hidden="true" /> {cancelling ? "Cancelling…" : "Cancel"}
             </Button>
           </form>
         )}
@@ -70,6 +76,7 @@ export function InvoiceActions({
           Sent. Client link: /i/{publicId}
         </p>
       )}
+      {cancelState?.error && <p role="alert" className="text-xs text-danger">{cancelState.error}</p>}
     </div>
   );
 }

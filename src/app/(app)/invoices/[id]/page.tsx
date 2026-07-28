@@ -1,15 +1,16 @@
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
-import { invoices, invoiceItems, clients } from "@/db/schema";
+import { invoices, invoiceItems, clients, payments } from "@/db/schema";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Badge, INVOICE_STATUS_TONE } from "@/components/ui/badge";
 import { formatDate, formatMoney } from "@/lib/utils";
-import { getDisplayStatus } from "@/lib/invoices";
+import { getDisplayStatus, remainingBalance } from "@/lib/invoices";
 import { paymentTermsLabel } from "@/lib/payment-terms";
 import { InvoiceActions } from "./invoice-actions";
+import { PaymentForm, PaymentList } from "./payment-form";
 
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,10 +24,19 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
     .where(eq(invoiceItems.invoiceId, id))
     .orderBy(asc(invoiceItems.sortOrder))
     .all();
+  const invoicePayments = db
+    .select()
+    .from(payments)
+    .where(eq(payments.invoiceId, id))
+    .orderBy(desc(payments.paidAt))
+    .all();
 
   const displayStatus = getDisplayStatus(invoice);
   const taxable = Math.max(invoice.subtotal - invoice.discount, 0);
   const taxAmount = taxable * (invoice.taxRate / 100);
+  const remaining = remainingBalance(invoice);
+  const canRecordPayment =
+    invoice.status !== "draft" && invoice.status !== "cancelled" && invoice.status !== "paid";
 
   return (
     <div>
@@ -96,15 +106,56 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                     <span className="font-tabular">{formatMoney(taxAmount, invoice.currency)}</span>
                   </div>
                 )}
-                <div className="mt-1 flex justify-between border-t border-line pt-1.5 font-medium">
-                  <span>Total</span>
-                  <span className="font-tabular text-accent">
-                    {formatMoney(invoice.total, invoice.currency)}
-                  </span>
-                </div>
+                {invoice.amountPaid > 0 ? (
+                  <>
+                    <div className="mt-1 flex justify-between border-t border-line pt-1.5">
+                      <span className="text-ink-muted">Total</span>
+                      <span className="font-tabular">{formatMoney(invoice.total, invoice.currency)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-ink-muted">Paid</span>
+                      <span className="font-tabular text-success">
+                        -{formatMoney(invoice.amountPaid, invoice.currency)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between font-medium">
+                      <span>Balance due</span>
+                      <span className="font-tabular text-accent">
+                        {formatMoney(remaining, invoice.currency)}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="mt-1 flex justify-between border-t border-line pt-1.5 font-medium">
+                    <span>Total</span>
+                    <span className="font-tabular text-accent">
+                      {formatMoney(invoice.total, invoice.currency)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </Card>
+
+          {invoice.status !== "draft" && (
+            <Card>
+              <CardHeader>
+                <h2 className="font-medium text-ink">Payments</h2>
+                {invoice.amountPaid > 0 && (
+                  <span className="font-tabular text-sm text-ink-muted">
+                    {formatMoney(invoice.amountPaid, invoice.currency)} of{" "}
+                    {formatMoney(invoice.total, invoice.currency)}
+                  </span>
+                )}
+              </CardHeader>
+              {canRecordPayment && (
+                <div className="border-b border-line">
+                  <PaymentForm invoiceId={invoice.id} remaining={remaining} currency={invoice.currency} />
+                </div>
+              )}
+              <PaymentList invoiceId={invoice.id} payments={invoicePayments} currency={invoice.currency} />
+            </Card>
+          )}
 
           {(invoice.notes || invoice.terms) && (
             <Card>

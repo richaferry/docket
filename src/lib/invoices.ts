@@ -26,17 +26,33 @@ export function reserveInvoiceNumber(): string {
   return number;
 }
 
-export type DisplayStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled";
+export type DisplayStatus = "draft" | "sent" | "paid" | "overdue" | "partial" | "cancelled";
+
+// A cent of floating-point slop is tolerated so a payment that's meant to
+// settle an invoice (e.g. entered as the exact remaining balance) doesn't
+// get stranded in "partial" by a rounding error.
+const BALANCE_EPSILON = 0.005;
 
 export function getDisplayStatus(invoice: {
   status: string;
   dueDate: Date | number;
+  amountPaid?: number;
+  total?: number;
 }): DisplayStatus {
-  if (invoice.status === "sent") {
-    const due = invoice.dueDate instanceof Date ? invoice.dueDate : new Date(invoice.dueDate);
-    if (due.getTime() < Date.now()) return "overdue";
-  }
-  return invoice.status as DisplayStatus;
+  if (invoice.status !== "sent") return invoice.status as DisplayStatus;
+
+  const due = invoice.dueDate instanceof Date ? invoice.dueDate : new Date(invoice.dueDate);
+  if (due.getTime() < Date.now()) return "overdue";
+
+  const amountPaid = invoice.amountPaid ?? 0;
+  const total = invoice.total ?? 0;
+  if (amountPaid > BALANCE_EPSILON && amountPaid < total - BALANCE_EPSILON) return "partial";
+
+  return "sent";
+}
+
+export function remainingBalance(invoice: { total: number; amountPaid: number }): number {
+  return Math.max(invoice.total - invoice.amountPaid, 0);
 }
 
 export function buildInvoicePdfData(invoiceId: string): InvoicePdfData {
@@ -72,6 +88,7 @@ export function buildInvoicePdfData(invoiceId: string): InvoicePdfData {
     taxAmount: invoice.subtotal - invoice.discount > 0 ? (invoice.subtotal - invoice.discount) * (invoice.taxRate / 100) : 0,
     discount: invoice.discount,
     total: invoice.total,
+    amountPaid: invoice.amountPaid,
     notes: invoice.notes,
     terms: invoice.terms,
     business: {
@@ -90,11 +107,13 @@ export function buildInvoicePdfData(invoiceId: string): InvoicePdfData {
   };
 }
 
-export function sumOutstanding(rows: { status: string; total: number; dueDate: Date | number }[]): number {
+export function sumOutstanding(
+  rows: { status: string; total: number; amountPaid: number; dueDate: Date | number }[],
+): number {
   return rows
     .filter((r) => {
       const display = getDisplayStatus(r);
-      return display === "sent" || display === "overdue";
+      return display === "sent" || display === "overdue" || display === "partial";
     })
-    .reduce((sum, r) => sum + r.total, 0);
+    .reduce((sum, r) => sum + remainingBalance(r), 0);
 }

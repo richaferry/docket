@@ -6,8 +6,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
-import { invoices, invoiceItems, activities, clients } from "@/db/schema";
-import { calcTotals, reserveInvoiceNumber, buildInvoicePdfData } from "@/lib/invoices";
+import { invoices, invoiceItems, activities, clients, payments } from "@/db/schema";
+import { calcTotals, reserveInvoiceNumber, buildInvoicePdfData, remainingBalance } from "@/lib/invoices";
 import { renderInvoicePdf } from "@/lib/pdf/invoice-document";
 import { sendMail, MailerNotConfiguredError, MailProviderError } from "@/lib/mailer";
 import { getSettings } from "@/lib/settings";
@@ -184,6 +184,11 @@ export async function sendInvoice(id: string) {
   const link = `${publicUrl}/i/${invoice.publicId}`;
 
   const data = buildInvoicePdfData(id);
+  const remaining = remainingBalance(invoice);
+  const amountLabel =
+    invoice.amountPaid > 0
+      ? `<strong>${formatMoney(remaining, invoice.currency)}</strong> remaining (of ${formatMoney(invoice.total, invoice.currency)})`
+      : `<strong>${formatMoney(invoice.total, invoice.currency)}</strong>`;
 
   try {
     const pdfBuffer = await renderInvoicePdf(data);
@@ -194,7 +199,7 @@ export async function sendInvoice(id: string) {
       html: `
         <p>Hi ${client.name},</p>
         <p>Please find attached invoice <strong>${invoice.number}</strong> for
-        <strong>${formatMoney(invoice.total, invoice.currency)}</strong>, due ${formatDate(invoice.dueDate)}.</p>
+        ${amountLabel}, due ${formatDate(invoice.dueDate)}.</p>
         <p>You can also view it online: <a href="${link}">${link}</a></p>
         <p>Thanks,<br/>${settings.businessName}</p>
       `,
@@ -233,7 +238,7 @@ export async function markInvoicePaid(id: string) {
   if (!invoice) return;
 
   db.update(invoices)
-    .set({ status: "paid", paidAt: new Date(), updatedAt: new Date() })
+    .set({ status: "paid", amountPaid: invoice.total, paidAt: new Date(), updatedAt: new Date() })
     .where(eq(invoices.id, id))
     .run();
 
@@ -248,15 +253,27 @@ export async function markInvoicePaid(id: string) {
 
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/invoices");
+  revalidatePath("/");
+  revalidatePath("/clients");
 }
 
-export async function cancelInvoice(id: string) {
+export async function cancelInvoice(id: string, _prev: unknown, _formData: FormData) {
+  const invoice = db.select().from(invoices).where(eq(invoices.id, id)).get();
+  if (!invoice) return { error: "Invoice not found" };
+  if (invoice.amountPaid > 0) {
+    return {
+      error:
+        "This invoice has payments recorded against it and can't be cancelled. Delete the payments first if you need to cancel it.",
+    };
+  }
+
   db.update(invoices)
     .set({ status: "cancelled", updatedAt: new Date() })
     .where(eq(invoices.id, id))
     .run();
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/invoices");
+  return { error: null, success: true };
 }
 
 export async function reopenInvoice(id: string) {
@@ -266,4 +283,112 @@ export async function reopenInvoice(id: string) {
     .run();
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/invoices");
+}
+
+const paymentSchema = z.object({
+  amount: z.coerce.number().positive("Enter an amount greater than zero"),
+  paidAt: z.coerce.date(),
+  note: z.string().optional(),
+});
+
+export async function recordPayment(invoiceId: string, _prev: unknown, formData: FormData) {
+  const parsed = paymentSchema.safeParse({
+    amount: formData.get("amount"),
+    paidAt: formData.get("paidAt"),
+    note: formData.get("note") || undefined,
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const invoice = db.select().from(invoices).where(eq(invoices.id, invoiceId)).get();
+  if (!invoice) return { error: "Invoice not found" };
+  if (invoice.status === "draft") {
+    return { error: "Send the invoice before recording a payment against it." };
+  }
+  if (invoice.status === "cancelled") {
+    return { error: "This invoice is cancelled." };
+  }
+  if (invoice.status === "paid") {
+    return { error: "This invoice is already fully paid." };
+  }
+
+  const remaining = remainingBalance(invoice);
+  if (parsed.data.amount > remaining + 0.005) {
+    return {
+      error: `That exceeds the remaining balance of ${formatMoney(remaining, invoice.currency)}.`,
+    };
+  }
+
+  const newAmountPaid = invoice.amountPaid + parsed.data.amount;
+  const nowFullyPaid = newAmountPaid >= invoice.total - 0.005;
+  const newRemaining = remainingBalance({ total: invoice.total, amountPaid: newAmountPaid });
+
+  db.transaction((tx) => {
+    tx.insert(payments)
+      .values({
+        id: nanoid(),
+        invoiceId,
+        amount: parsed.data.amount,
+        paidAt: parsed.data.paidAt,
+        note: parsed.data.note,
+      })
+      .run();
+
+    tx.update(invoices)
+      .set({
+        amountPaid: newAmountPaid,
+        status: nowFullyPaid ? "paid" : invoice.status,
+        paidAt: nowFullyPaid ? parsed.data.paidAt : invoice.paidAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(invoices.id, invoiceId))
+      .run();
+
+    tx.insert(activities)
+      .values({
+        id: nanoid(),
+        clientId: invoice.clientId,
+        type: nowFullyPaid ? "invoice_paid" : "payment_received",
+        content: nowFullyPaid
+          ? `Invoice ${invoice.number} (${formatMoney(invoice.total, invoice.currency)}) paid in full.`
+          : `Payment of ${formatMoney(parsed.data.amount, invoice.currency)} received for ${invoice.number} (${formatMoney(newRemaining, invoice.currency)} remaining).`,
+      })
+      .run();
+  });
+
+  revalidatePath(`/invoices/${invoiceId}`);
+  revalidatePath("/invoices");
+  revalidatePath("/");
+  revalidatePath("/clients");
+  return { error: null, success: true };
+}
+
+export async function deletePayment(invoiceId: string, paymentId: string) {
+  const invoice = db.select().from(invoices).where(eq(invoices.id, invoiceId)).get();
+  if (!invoice) return;
+  const payment = db.select().from(payments).where(eq(payments.id, paymentId)).get();
+  if (!payment) return;
+
+  const newAmountPaid = Math.max(invoice.amountPaid - payment.amount, 0);
+  const stillFullyPaid = newAmountPaid >= invoice.total - 0.005;
+  const wasAutoPaid = invoice.status === "paid" && !stillFullyPaid;
+
+  db.transaction((tx) => {
+    tx.delete(payments).where(eq(payments.id, paymentId)).run();
+    tx.update(invoices)
+      .set({
+        amountPaid: newAmountPaid,
+        status: wasAutoPaid ? "sent" : invoice.status,
+        paidAt: wasAutoPaid ? null : invoice.paidAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(invoices.id, invoiceId))
+      .run();
+  });
+
+  revalidatePath(`/invoices/${invoiceId}`);
+  revalidatePath("/invoices");
+  revalidatePath("/");
+  revalidatePath("/clients");
 }

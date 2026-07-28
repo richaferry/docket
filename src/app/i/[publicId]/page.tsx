@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { invoices, invoiceItems, clients } from "@/db/schema";
 import { getSettings } from "@/lib/settings";
-import { getDisplayStatus } from "@/lib/invoices";
+import { getDisplayStatus, remainingBalance } from "@/lib/invoices";
 import { Badge, INVOICE_STATUS_TONE } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -119,12 +119,33 @@ export default async function PublicInvoicePage({
                 <span className="font-tabular">{formatMoney(taxAmount, invoice.currency)}</span>
               </div>
             )}
-            <div className="mt-1 flex justify-between border-t border-line pt-1.5 font-medium">
-              <span>Total due</span>
-              <span className="font-tabular text-accent">
-                {formatMoney(invoice.total, invoice.currency)}
-              </span>
-            </div>
+            {invoice.amountPaid > 0 ? (
+              <>
+                <div className="mt-1 flex justify-between border-t border-line pt-1.5">
+                  <span className="text-ink-muted">Total</span>
+                  <span className="font-tabular">{formatMoney(invoice.total, invoice.currency)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-ink-muted">Paid</span>
+                  <span className="font-tabular text-success">
+                    -{formatMoney(invoice.amountPaid, invoice.currency)}
+                  </span>
+                </div>
+                <div className="flex justify-between font-medium">
+                  <span>Balance due</span>
+                  <span className="font-tabular text-accent">
+                    {formatMoney(remainingBalance(invoice), invoice.currency)}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="mt-1 flex justify-between border-t border-line pt-1.5 font-medium">
+                <span>Total due</span>
+                <span className="font-tabular text-accent">
+                  {formatMoney(invoice.total, invoice.currency)}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

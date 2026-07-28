@@ -38,6 +38,7 @@ export const INVOICE_STATUS_TONE: Record<string, BadgeTone> = {
   sent: "accent",
   paid: "success",
   overdue: "danger",
+  partial: "warning",
   cancelled: "neutral",
 };
 

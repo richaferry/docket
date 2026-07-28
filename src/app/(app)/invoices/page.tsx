@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { LinkButton } from "@/components/ui/button";
 import { Badge, INVOICE_STATUS_TONE } from "@/components/ui/badge";
 import { formatDate, formatMoney, cn } from "@/lib/utils";
-import { getDisplayStatus, type DisplayStatus } from "@/lib/invoices";
+import { getDisplayStatus, remainingBalance, type DisplayStatus } from "@/lib/invoices";
 import { FileText } from "lucide-react";
 
 const FILTERS: { label: string; value: DisplayStatus | "all" }[] = [
@@ -14,6 +14,7 @@ const FILTERS: { label: string; value: DisplayStatus | "all" }[] = [
   { label: "Draft", value: "draft" },
   { label: "Sent", value: "sent" },
   { label: "Overdue", value: "overdue" },
+  { label: "Partial", value: "partial" },
   { label: "Paid", value: "paid" },
   { label: "Cancelled", value: "cancelled" },
 ];
@@ -101,7 +102,14 @@ export default async function InvoicesPage({
                         <Badge tone={INVOICE_STATUS_TONE[displayStatus]}>{displayStatus}</Badge>
                       </td>
                       <td className="px-4 py-3 text-right font-tabular">
-                        {formatMoney(invoice.total, invoice.currency)}
+                        {displayStatus === "partial" ? (
+                          <>
+                            {formatMoney(remainingBalance(invoice), invoice.currency)}
+                            <span className="text-ink-muted"> / {formatMoney(invoice.total, invoice.currency)}</span>
+                          </>
+                        ) : (
+                          formatMoney(invoice.total, invoice.currency)
+                        )}
                       </td>
                     </tr>
                   );

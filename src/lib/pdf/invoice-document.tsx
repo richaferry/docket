@@ -68,6 +68,7 @@ export type InvoicePdfData = {
   taxAmount: number;
   discount: number;
   total: number;
+  amountPaid?: number;
   notes?: string | null;
   terms?: string | null;
   business: {
@@ -155,10 +156,29 @@ export function InvoiceDocument({ data }: { data: InvoicePdfData }) {
               <Text>{money(data.taxAmount, data.currency)}</Text>
             </View>
           )}
-          <View style={styles.totalRowFinal}>
-            <Text style={styles.totalFinalLabel}>Total due</Text>
-            <Text style={styles.totalFinalAmount}>{money(data.total, data.currency)}</Text>
-          </View>
+          {data.amountPaid && data.amountPaid > 0 ? (
+            <>
+              <View style={styles.totalsRow}>
+                <Text style={styles.muted}>Total</Text>
+                <Text>{money(data.total, data.currency)}</Text>
+              </View>
+              <View style={styles.totalsRow}>
+                <Text style={styles.muted}>Paid</Text>
+                <Text>-{money(data.amountPaid, data.currency)}</Text>
+              </View>
+              <View style={styles.totalRowFinal}>
+                <Text style={styles.totalFinalLabel}>Balance due</Text>
+                <Text style={styles.totalFinalAmount}>
+                  {money(Math.max(data.total - data.amountPaid, 0), data.currency)}
+                </Text>
+              </View>
+            </>
+          ) : (
+            <View style={styles.totalRowFinal}>
+              <Text style={styles.totalFinalLabel}>Total due</Text>
+              <Text style={styles.totalFinalAmount}>{money(data.total, data.currency)}</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.footer}>

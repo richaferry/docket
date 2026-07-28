@@ -1,7 +1,7 @@
 import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { StickyNote, Phone, Mail, Users2, ArrowRightLeft, Send, CheckCircle2 } from "lucide-react";
+import { StickyNote, Phone, Mail, Users2, ArrowRightLeft, Send, CheckCircle2, Banknote } from "lucide-react";
 import { db } from "@/db";
 import { clients, activities, invoices } from "@/db/schema";
 import { PageHeader } from "@/components/page-header";
@@ -20,6 +20,7 @@ const ACTIVITY_ICON = {
   status_change: ArrowRightLeft,
   invoice_sent: Send,
   invoice_paid: CheckCircle2,
+  payment_received: Banknote,
 };
 
 export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {

@@ -1,15 +1,24 @@
 import { desc } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
-import { invoices, clients, activities } from "@/db/schema";
+import { invoices, clients, activities, payments } from "@/db/schema";
 import { getSettings } from "@/lib/settings";
 import { PageHeader } from "@/components/page-header";
 import { LinkButton } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
 import { Badge, INVOICE_STATUS_TONE } from "@/components/ui/badge";
 import { formatDate, formatDateTime, formatMoney, cn } from "@/lib/utils";
-import { getDisplayStatus } from "@/lib/invoices";
-import { StickyNote, Phone, Mail, Users2, ArrowRightLeft, Send, CheckCircle2 } from "lucide-react";
+import { getDisplayStatus, remainingBalance } from "@/lib/invoices";
+import {
+  StickyNote,
+  Phone,
+  Mail,
+  Users2,
+  ArrowRightLeft,
+  Send,
+  CheckCircle2,
+  Banknote,
+} from "lucide-react";
 
 const ACTIVITY_ICON = {
   note: StickyNote,
@@ -19,6 +28,7 @@ const ACTIVITY_ICON = {
   status_change: ArrowRightLeft,
   invoice_sent: Send,
   invoice_paid: CheckCircle2,
+  payment_received: Banknote,
 };
 
 export default function DashboardPage() {
@@ -34,28 +44,29 @@ export default function DashboardPage() {
 
   const withStatus = allInvoices.map((invoice) => ({ invoice, status: getDisplayStatus(invoice) }));
 
-  const outstanding = withStatus
-    .filter((i) => i.status === "sent" || i.status === "overdue")
-    .reduce((sum, i) => sum + i.invoice.total, 0);
+  const outstandingInvoices = withStatus.filter(
+    (i) => i.status === "sent" || i.status === "overdue" || i.status === "partial",
+  );
+  const outstanding = outstandingInvoices.reduce((sum, i) => sum + remainingBalance(i.invoice), 0);
 
   const overdue = withStatus.filter((i) => i.status === "overdue");
-  const overdueTotal = overdue.reduce((sum, i) => sum + i.invoice.total, 0);
+  const overdueTotal = overdue.reduce((sum, i) => sum + remainingBalance(i.invoice), 0);
 
   const now = new Date();
-  const paidThisMonth = withStatus
+  // Actual cash collected this month, not just invoices that reached "paid" —
+  // a partial payment should count toward revenue the moment it's received.
+  const allPayments = db.select().from(payments).all();
+  const paidThisMonth = allPayments
     .filter(
-      (i) =>
-        i.status === "paid" &&
-        i.invoice.paidAt &&
-        new Date(i.invoice.paidAt).getMonth() === now.getMonth() &&
-        new Date(i.invoice.paidAt).getFullYear() === now.getFullYear(),
+      (p) =>
+        new Date(p.paidAt).getMonth() === now.getMonth() &&
+        new Date(p.paidAt).getFullYear() === now.getFullYear(),
     )
-    .reduce((sum, i) => sum + i.invoice.total, 0);
+    .reduce((sum, p) => sum + p.amount, 0);
 
   const activeClients = allClients.filter((c) => c.status === "active").length;
 
-  const dueSoon = withStatus
-    .filter((i) => i.status === "sent" || i.status === "overdue")
+  const dueSoon = outstandingInvoices
     .sort((a, b) => new Date(a.invoice.dueDate).getTime() - new Date(b.invoice.dueDate).getTime())
     .slice(0, 5);
 
@@ -120,7 +131,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="font-tabular text-sm text-ink">
-                          {formatMoney(invoice.total, invoice.currency)}
+                          {formatMoney(remainingBalance(invoice), invoice.currency)}
                         </span>
                         <Badge tone={INVOICE_STATUS_TONE[status]}>{status}</Badge>
                       </div>
