@@ -41,6 +41,20 @@ export function BusinessProfileForm({ settings }: { settings: Settings }) {
         <Field label="Address" htmlFor="businessAddress">
           <Input id="businessAddress" name="businessAddress" defaultValue={settings.businessAddress} />
         </Field>
+        <Field
+          label="Public URL"
+          htmlFor="publicUrl"
+          className="col-span-2"
+          hint="Where this app is reachable from the internet — used to build the client-facing invoice link in emails, e.g. https://invoices.yourdomain.com"
+        >
+          <Input
+            id="publicUrl"
+            name="publicUrl"
+            type="url"
+            placeholder="https://invoices.yourdomain.com"
+            defaultValue={settings.publicUrl ?? ""}
+          />
+        </Field>
       </div>
       {state?.error && <p className="text-sm text-danger">{state.error}</p>}
       <div className="flex items-center gap-3">

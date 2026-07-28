@@ -170,13 +170,17 @@ export async function sendInvoice(id: string) {
   if (!client) return { error: "Client not found" };
 
   const settings = getSettings();
+  if (!settings.publicUrl) {
+    return {
+      error: "Set your workspace's Public URL in Settings before sending invoices — it's used to build the client-facing link.",
+    };
+  }
+  const link = `${settings.publicUrl.replace(/\/$/, "")}/i/${invoice.publicId}`;
+
   const data = buildInvoicePdfData(id);
 
   try {
     const pdfBuffer = await renderInvoicePdf(data);
-
-    const origin = process.env.APP_URL || "";
-    const link = origin ? `${origin}/i/${invoice.publicId}` : `/i/${invoice.publicId}`;
 
     await sendMail({
       to: client.email,
@@ -188,7 +192,9 @@ export async function sendInvoice(id: string) {
         <p>You can also view it online: <a href="${link}">${link}</a></p>
         <p>Thanks,<br/>${settings.businessName}</p>
       `,
-      attachments: [{ filename: `${invoice.number}.pdf`, content: pdfBuffer }],
+      attachments: [
+        { filename: `${invoice.number}.pdf`, content: pdfBuffer, url: `${link}/pdf` },
+      ],
     });
   } catch (err) {
     if (err instanceof MailerNotConfiguredError || err instanceof MailProviderError) {

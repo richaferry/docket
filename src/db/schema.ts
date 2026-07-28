@@ -96,6 +96,7 @@ export const settings = sqliteTable("settings", {
   nextInvoiceNumber: integer("next_invoice_number").notNull().default(1),
   currency: text("currency").notNull().default("USD"),
   defaultTerms: text("default_terms").notNull().default("Payment due within 14 days."),
+  publicUrl: text("public_url"),
 
   emailProvider: text("email_provider", { enum: ["smtp", "mailanvil"] })
     .notNull()

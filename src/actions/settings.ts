@@ -11,6 +11,11 @@ const businessSchema = z.object({
   businessEmail: z.string().email("Enter a valid email"),
   businessAddress: z.string().optional(),
   businessPhone: z.string().optional(),
+  publicUrl: z
+    .string()
+    .url("Enter a full URL, including https://")
+    .optional()
+    .or(z.literal("")),
 });
 
 export async function updateBusinessProfile(_prev: unknown, formData: FormData) {
@@ -19,6 +24,7 @@ export async function updateBusinessProfile(_prev: unknown, formData: FormData) 
     businessEmail: formData.get("businessEmail"),
     businessAddress: formData.get("businessAddress") || undefined,
     businessPhone: formData.get("businessPhone") || undefined,
+    publicUrl: formData.get("publicUrl") || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };

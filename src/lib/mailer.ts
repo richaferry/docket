@@ -19,7 +19,7 @@ type SendMailOptions = {
   to: string;
   subject: string;
   html: string;
-  attachments?: { filename: string; content: Buffer }[];
+  attachments?: { filename: string; content: Buffer; url?: string }[];
 };
 
 export async function sendMail(options: SendMailOptions) {
@@ -59,6 +59,13 @@ async function sendViaSmtp(options: SendMailOptions, settings: Settings) {
 // email address — MailAnvil rejects the "Name <email>" display-name format
 // with a generic "Invalid email" error — and the display name goes in a
 // separate `from_name` field instead. `to` must be an array, not a string.
+//
+// Attachments use `path` (a public URL MailAnvil fetches server-side) rather
+// than inline base64 `content` when a url is available: a real send showed
+// the base64 path arriving as a blank PDF, with the attachment MIME part
+// mislabeled `Content-Transfer-Encoding: 7bit` (invalid for binary data) on
+// MailAnvil's side. The `path` field was confirmed to exist on the live API
+// and sidesteps their base64-to-MIME conversion entirely.
 async function sendViaMailAnvil(options: SendMailOptions, settings: Settings) {
   if (!settings.mailanvilApiKey || !settings.fromEmail) {
     throw new MailerNotConfiguredError();
@@ -76,11 +83,11 @@ async function sendViaMailAnvil(options: SendMailOptions, settings: Settings) {
       to: [options.to],
       subject: options.subject,
       html: options.html,
-      attachments: options.attachments?.map((a) => ({
-        filename: a.filename,
-        content: a.content.toString("base64"),
-        content_type: "application/pdf",
-      })),
+      attachments: options.attachments?.map((a) =>
+        a.url
+          ? { filename: a.filename, path: a.url, content_type: "application/pdf" }
+          : { filename: a.filename, content: a.content.toString("base64"), content_type: "application/pdf" },
+      ),
     }),
   });
 
