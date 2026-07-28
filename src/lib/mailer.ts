@@ -55,10 +55,10 @@ async function sendViaSmtp(options: SendMailOptions, settings: Settings) {
   });
 }
 
-// MailAnvil integration is best-effort: the vendor's own docs site behaved
-// inconsistently when queried (see conversation) so the attachment support
-// below is unverified — a real send will surface the provider's actual error
-// message via MailProviderError if this shape turns out to be wrong.
+// Verified directly against the live API (2026-07-28): `from` must be a bare
+// email address — MailAnvil rejects the "Name <email>" display-name format
+// with a generic "Invalid email" error — and the display name goes in a
+// separate `from_name` field instead. `to` must be an array, not a string.
 async function sendViaMailAnvil(options: SendMailOptions, settings: Settings) {
   if (!settings.mailanvilApiKey || !settings.fromEmail) {
     throw new MailerNotConfiguredError();
@@ -71,7 +71,8 @@ async function sendViaMailAnvil(options: SendMailOptions, settings: Settings) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: `${settings.fromName || settings.businessName} <${settings.fromEmail}>`,
+      from: settings.fromEmail,
+      from_name: settings.fromName || settings.businessName,
       to: [options.to],
       subject: options.subject,
       html: options.html,
