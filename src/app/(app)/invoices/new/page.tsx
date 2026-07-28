@@ -5,6 +5,7 @@ import { getSettings } from "@/lib/settings";
 import { PageHeader } from "@/components/page-header";
 import { createInvoice } from "@/actions/invoices";
 import { todayISO, daysFromNowISO } from "@/lib/utils";
+import { paymentTermsDays } from "@/lib/payment-terms";
 import { InvoiceForm } from "../invoice-form";
 
 export default async function NewInvoicePage({
@@ -27,7 +28,8 @@ export default async function NewInvoicePage({
           defaultValues={{
             clientId: clientId ?? "",
             issueDate: todayISO(),
-            dueDate: daysFromNowISO(14),
+            dueDate: daysFromNowISO(paymentTermsDays(settings.defaultPaymentTerms) ?? 14),
+            paymentTerms: settings.defaultPaymentTerms,
             currency: settings.currency,
             taxLabel: settings.taxLabel,
             taxRate: settings.defaultTaxRate,

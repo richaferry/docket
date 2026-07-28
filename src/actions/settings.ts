@@ -11,11 +11,6 @@ const businessSchema = z.object({
   businessEmail: z.string().email("Enter a valid email"),
   businessAddress: z.string().optional(),
   businessPhone: z.string().optional(),
-  publicUrl: z
-    .string()
-    .url("Enter a full URL, including https://")
-    .optional()
-    .or(z.literal("")),
 });
 
 export async function updateBusinessProfile(_prev: unknown, formData: FormData) {
@@ -24,7 +19,6 @@ export async function updateBusinessProfile(_prev: unknown, formData: FormData) 
     businessEmail: formData.get("businessEmail"),
     businessAddress: formData.get("businessAddress") || undefined,
     businessPhone: formData.get("businessPhone") || undefined,
-    publicUrl: formData.get("publicUrl") || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -37,6 +31,7 @@ export async function updateBusinessProfile(_prev: unknown, formData: FormData) 
 
 const invoiceDefaultsSchema = z.object({
   currency: z.string().min(1),
+  defaultPaymentTerms: z.string().min(1),
   taxLabel: z.string().min(1),
   defaultTaxRate: z.coerce.number().min(0),
   invoicePrefix: z.string().min(1),
@@ -48,6 +43,7 @@ const invoiceDefaultsSchema = z.object({
 export async function updateInvoiceDefaults(_prev: unknown, formData: FormData) {
   const parsed = invoiceDefaultsSchema.safeParse({
     currency: formData.get("currency"),
+    defaultPaymentTerms: formData.get("defaultPaymentTerms"),
     taxLabel: formData.get("taxLabel"),
     defaultTaxRate: formData.get("defaultTaxRate"),
     invoicePrefix: formData.get("invoicePrefix"),

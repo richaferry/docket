@@ -8,6 +8,7 @@ import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Badge, INVOICE_STATUS_TONE } from "@/components/ui/badge";
 import { formatDate, formatMoney } from "@/lib/utils";
 import { getDisplayStatus } from "@/lib/invoices";
+import { paymentTermsLabel } from "@/lib/payment-terms";
 import { InvoiceActions } from "./invoice-actions";
 
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -152,6 +153,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             <CardBody className="flex flex-col gap-2 text-sm">
               <TimelineRow label="Issued" value={formatDate(invoice.issueDate)} />
               <TimelineRow label="Due" value={formatDate(invoice.dueDate)} />
+              <TimelineRow label="Payment terms" value={paymentTermsLabel(invoice.paymentTerms)} />
               {invoice.sentAt && <TimelineRow label="Sent" value={formatDate(invoice.sentAt)} />}
               {invoice.paidAt && <TimelineRow label="Paid" value={formatDate(invoice.paidAt)} />}
             </CardBody>

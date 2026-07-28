@@ -11,6 +11,7 @@ import { calcTotals, reserveInvoiceNumber, buildInvoicePdfData } from "@/lib/inv
 import { renderInvoicePdf } from "@/lib/pdf/invoice-document";
 import { sendMail, MailerNotConfiguredError, MailProviderError } from "@/lib/mailer";
 import { getSettings } from "@/lib/settings";
+import { getPublicUrl } from "@/lib/env";
 import { formatMoney, formatDate } from "@/lib/utils";
 
 const itemSchema = z.object({
@@ -23,6 +24,7 @@ const invoiceSchema = z.object({
   clientId: z.string().min(1, "Choose a client"),
   issueDate: z.coerce.date(),
   dueDate: z.coerce.date(),
+  paymentTerms: z.string().min(1).default("custom"),
   currency: z.string().min(1),
   taxLabel: z.string().min(1),
   taxRate: z.coerce.number().min(0),
@@ -46,6 +48,7 @@ function parseInvoiceForm(formData: FormData) {
     clientId: formData.get("clientId"),
     issueDate: formData.get("issueDate"),
     dueDate: formData.get("dueDate"),
+    paymentTerms: formData.get("paymentTerms") || undefined,
     currency: formData.get("currency"),
     taxLabel: formData.get("taxLabel"),
     taxRate: formData.get("taxRate"),
@@ -76,6 +79,7 @@ export async function createInvoice(_prev: unknown, formData: FormData) {
         clientId: values.clientId,
         issueDate: values.issueDate,
         dueDate: values.dueDate,
+        paymentTerms: values.paymentTerms,
         currency: values.currency,
         taxLabel: values.taxLabel,
         taxRate: values.taxRate,
@@ -123,6 +127,7 @@ export async function updateInvoice(id: string, _prev: unknown, formData: FormDa
         clientId: values.clientId,
         issueDate: values.issueDate,
         dueDate: values.dueDate,
+        paymentTerms: values.paymentTerms,
         currency: values.currency,
         taxLabel: values.taxLabel,
         taxRate: values.taxRate,
@@ -170,12 +175,13 @@ export async function sendInvoice(id: string) {
   if (!client) return { error: "Client not found" };
 
   const settings = getSettings();
-  if (!settings.publicUrl) {
+  const publicUrl = getPublicUrl();
+  if (!publicUrl) {
     return {
-      error: "Set your workspace's Public URL in Settings before sending invoices — it's used to build the client-facing link.",
+      error: "Set the PUBLIC_URL environment variable (and restart the server) before sending invoices — it's used to build the client-facing link.",
     };
   }
-  const link = `${settings.publicUrl.replace(/\/$/, "")}/i/${invoice.publicId}`;
+  const link = `${publicUrl}/i/${invoice.publicId}`;
 
   const data = buildInvoicePdfData(id);
 

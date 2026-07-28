@@ -5,6 +5,8 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { formatMoney, todayISO, daysFromNowISO } from "@/lib/utils";
+import { CURRENCIES } from "@/lib/currencies";
+import { PAYMENT_TERMS, paymentTermsDays } from "@/lib/payment-terms";
 
 type ClientOption = { id: string; name: string; company: string | null };
 
@@ -15,6 +17,7 @@ type InvoiceFormValues = {
   clientId: string;
   issueDate: string;
   dueDate: string;
+  paymentTerms?: string;
   currency: string;
   taxLabel: string;
   taxRate: number;
@@ -27,6 +30,12 @@ type InvoiceFormValues = {
 function toDateInput(d: Date | string) {
   const date = typeof d === "string" ? new Date(d) : d;
   return date.toISOString().slice(0, 10);
+}
+
+function addDaysToDateString(dateStr: string, days: number): string {
+  const d = new Date(`${dateStr}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
 }
 
 function calcTotals(items: LineItem[], taxRate: number, discount: number) {
@@ -64,6 +73,17 @@ export function InvoiceForm({
   const [discount, setDiscount] = useState(defaultValues?.discount ?? 0);
   const [currency, setCurrency] = useState(defaultValues?.currency ?? "USD");
 
+  const initialPaymentTerms = defaultValues?.paymentTerms ?? "net_14";
+  const [paymentTerms, setPaymentTerms] = useState(initialPaymentTerms);
+  const [issueDate, setIssueDate] = useState(() =>
+    defaultValues ? toDateInput(defaultValues.issueDate) : toDateInput(todayISO()),
+  );
+  const [dueDate, setDueDate] = useState(() => {
+    if (defaultValues) return toDateInput(defaultValues.dueDate);
+    const days = paymentTermsDays(initialPaymentTerms) ?? 14;
+    return toDateInput(daysFromNowISO(days));
+  });
+
   const totals = useMemo(() => calcTotals(items, taxRate, discount), [items, taxRate, discount]);
 
   function updateItem(index: number, patch: Partial<LineItem>) {
@@ -76,6 +96,27 @@ export function InvoiceForm({
 
   function removeItem(index: number) {
     setItems((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : prev));
+  }
+
+  function handlePaymentTermsChange(value: string) {
+    setPaymentTerms(value);
+    const days = paymentTermsDays(value);
+    if (days !== null) {
+      setDueDate(addDaysToDateString(issueDate, days));
+    }
+  }
+
+  function handleIssueDateChange(value: string) {
+    setIssueDate(value);
+    const days = paymentTermsDays(paymentTerms);
+    if (days !== null) {
+      setDueDate(addDaysToDateString(value, days));
+    }
+  }
+
+  function handleDueDateChange(value: string) {
+    setDueDate(value);
+    setPaymentTerms("custom");
   }
 
   return (
@@ -92,7 +133,7 @@ export function InvoiceForm({
         )}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Field label="Client" htmlFor="clientId">
           <Select id="clientId" name="clientId" defaultValue={defaultValues?.clientId ?? ""} required>
             <option value="" disabled>
@@ -110,20 +151,32 @@ export function InvoiceForm({
             id="issueDate"
             name="issueDate"
             type="date"
-            defaultValue={defaultValues ? toDateInput(defaultValues.issueDate) : toDateInput(todayISO())}
+            value={issueDate}
+            onChange={(e) => handleIssueDateChange(e.target.value)}
             required
           />
+        </Field>
+        <Field label="Payment terms" htmlFor="paymentTerms">
+          <Select
+            id="paymentTerms"
+            name="paymentTerms"
+            value={paymentTerms}
+            onChange={(e) => handlePaymentTermsChange(e.target.value)}
+          >
+            {PAYMENT_TERMS.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </Select>
         </Field>
         <Field label="Due date" htmlFor="dueDate">
           <Input
             id="dueDate"
             name="dueDate"
             type="date"
-            defaultValue={
-              defaultValues
-                ? toDateInput(defaultValues.dueDate)
-                : toDateInput(daysFromNowISO(14))
-            }
+            value={dueDate}
+            onChange={(e) => handleDueDateChange(e.target.value)}
             required
           />
         </Field>
@@ -134,9 +187,9 @@ export function InvoiceForm({
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
           >
-            {["USD", "EUR", "GBP", "IDR", "SGD", "AUD"].map((c) => (
-              <option key={c} value={c}>
-                {c}
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.label}
               </option>
             ))}
           </Select>

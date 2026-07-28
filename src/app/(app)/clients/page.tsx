@@ -2,6 +2,7 @@ import { desc } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
 import { clients, invoices } from "@/db/schema";
+import { getSettings } from "@/lib/settings";
 import { PageHeader } from "@/components/page-header";
 import { LinkButton } from "@/components/ui/button";
 import { Badge, CLIENT_STATUS_TONE } from "@/components/ui/badge";
@@ -10,6 +11,7 @@ import { sumOutstanding } from "@/lib/invoices";
 import { Users } from "lucide-react";
 
 export default function ClientsPage() {
+  const settings = getSettings();
   const allClients = db.select().from(clients).orderBy(desc(clients.createdAt)).all();
   const allInvoices = db.select().from(invoices).all();
 
@@ -55,7 +57,7 @@ export default function ClientsPage() {
                         <Badge tone={CLIENT_STATUS_TONE[client.status]}>{client.status}</Badge>
                       </td>
                       <td className="px-4 py-3 text-right font-tabular">
-                        {outstanding > 0 ? formatMoney(outstanding, "USD") : "—"}
+                        {outstanding > 0 ? formatMoney(outstanding, settings.currency) : "—"}
                       </td>
                     </tr>
                   );

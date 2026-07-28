@@ -1,9 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FileText, Settings, LogOut, Menu, X } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  FileText,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logout } from "@/actions/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -15,7 +25,44 @@ const links = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+const SIDEBAR_COLLAPSE_KEY = "sidebar-collapsed";
+const SIDEBAR_COLLAPSE_EVENT = "docket-sidebar-collapse";
+
+function getCollapsedSnapshot(): boolean {
+  return localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === "1";
+}
+
+function getCollapsedServerSnapshot(): boolean {
+  return false;
+}
+
+function subscribeCollapsed(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener(SIDEBAR_COLLAPSE_EVENT, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(SIDEBAR_COLLAPSE_EVENT, callback);
+  };
+}
+
+function setCollapsed(value: boolean) {
+  if (value) {
+    localStorage.setItem(SIDEBAR_COLLAPSE_KEY, "1");
+  } else {
+    localStorage.removeItem(SIDEBAR_COLLAPSE_KEY);
+  }
+  window.dispatchEvent(new Event(SIDEBAR_COLLAPSE_EVENT));
+}
+
+function NavLinks({
+  pathname,
+  onNavigate,
+  collapsed,
+}: {
+  pathname: string;
+  onNavigate?: () => void;
+  collapsed?: boolean;
+}) {
   return (
     <nav className="flex flex-1 flex-col gap-0.5" aria-label="Main">
       {links.map((link) => {
@@ -27,15 +74,17 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
             href={link.href}
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
+            title={collapsed ? link.label : undefined}
             className={cn(
               "flex items-center gap-2.5 rounded-[var(--radius)] px-3 py-2 text-sm font-medium transition-colors",
+              collapsed && "justify-center px-0",
               active
                 ? "bg-accent-soft text-accent"
                 : "text-ink-muted hover:bg-neutral-soft hover:text-ink",
             )}
           >
             <Icon size={16} strokeWidth={2} aria-hidden="true" />
-            {link.label}
+            <span className={collapsed ? "sr-only" : undefined}>{link.label}</span>
           </Link>
         );
       })}
@@ -43,15 +92,19 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
   );
 }
 
-function SignOutButton() {
+function SignOutButton({ collapsed }: { collapsed?: boolean }) {
   return (
     <form action={logout}>
       <button
         type="submit"
-        className="flex w-full items-center gap-2.5 rounded-[var(--radius)] px-3 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-neutral-soft hover:text-ink"
+        title={collapsed ? "Sign out" : undefined}
+        className={cn(
+          "flex w-full items-center gap-2.5 rounded-[var(--radius)] px-3 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-neutral-soft hover:text-ink",
+          collapsed && "justify-center px-0",
+        )}
       >
         <LogOut size={16} strokeWidth={2} aria-hidden="true" />
-        Sign out
+        <span className={collapsed ? "sr-only" : undefined}>Sign out</span>
       </button>
     </form>
   );
@@ -63,6 +116,11 @@ export function Sidebar({ businessName }: { businessName: string }) {
   const [lastPathname, setLastPathname] = useState(pathname);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const collapsed = useSyncExternalStore(
+    subscribeCollapsed,
+    getCollapsedSnapshot,
+    getCollapsedServerSnapshot,
+  );
 
   // Close the mobile drawer on navigation. Adjusted during render (per React's
   // guidance for resetting state when a prop changes) rather than in an
@@ -138,23 +196,46 @@ export function Sidebar({ businessName }: { businessName: string }) {
               </button>
             </div>
             <NavLinks pathname={pathname} onNavigate={() => setOpen(false)} />
+            <ThemeToggle className="mb-2 self-start" />
             <SignOutButton />
           </aside>
         </div>
       )}
 
       {/* Desktop sidebar */}
-      <aside className="hidden w-56 shrink-0 flex-col border-r border-line bg-paper px-3 py-5 md:flex">
-        <div className="mb-6 px-2">
-          <p className="font-display text-lg leading-tight text-ink">
-            {businessName || "Docket"}
-          </p>
-          <p className="text-xs text-ink-muted">Client &amp; invoice workspace</p>
+      <aside
+        className={cn(
+          "hidden shrink-0 flex-col border-r border-line bg-paper py-5 transition-[width] duration-200 md:flex",
+          collapsed ? "w-16 px-2" : "w-56 px-3",
+        )}
+      >
+        <div className={cn("mb-6 flex items-center", collapsed ? "justify-center" : "justify-between px-2")}>
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="truncate font-display text-lg leading-tight text-ink">
+                {businessName || "Docket"}
+              </p>
+              <p className="text-xs text-ink-muted">Client &amp; invoice workspace</p>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius)] text-ink-muted hover:bg-neutral-soft hover:text-ink"
+          >
+            {collapsed ? (
+              <PanelLeftOpen size={16} aria-hidden="true" />
+            ) : (
+              <PanelLeftClose size={16} aria-hidden="true" />
+            )}
+          </button>
         </div>
-        <NavLinks pathname={pathname} />
-        <SignOutButton />
-        <div className="mt-4 px-2">
-          <ThemeToggle />
+        <NavLinks pathname={pathname} collapsed={collapsed} />
+        <div className={cn("mt-4 flex flex-col gap-2", collapsed && "items-center")}>
+          <ThemeToggle orientation={collapsed ? "vertical" : "horizontal"} />
+          <SignOutButton collapsed={collapsed} />
         </div>
       </aside>
     </>

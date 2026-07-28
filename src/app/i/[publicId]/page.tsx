@@ -8,6 +8,7 @@ import { Badge, INVOICE_STATUS_TONE } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { formatDate, formatMoney } from "@/lib/utils";
+import { paymentTermsLabel } from "@/lib/payment-terms";
 import { Download } from "lucide-react";
 
 export default async function PublicInvoicePage({
@@ -67,6 +68,7 @@ export default async function PublicInvoicePage({
               <span className="text-ink-muted">Due </span>
               {formatDate(invoice.dueDate)}
             </p>
+            <p className="text-ink-muted">{paymentTermsLabel(invoice.paymentTerms)}</p>
           </div>
         </div>
 

@@ -43,14 +43,24 @@ function apply(value: ThemePref) {
   window.dispatchEvent(new Event(THEME_EVENT));
 }
 
-export function ThemeToggle({ className }: { className?: string }) {
+export function ThemeToggle({
+  className,
+  orientation = "horizontal",
+}: {
+  className?: string;
+  orientation?: "horizontal" | "vertical";
+}) {
   const pref = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   return (
     <div
       role="group"
       aria-label="Color theme"
-      className={cn("flex items-center gap-0.5 rounded-[var(--radius)] border border-line bg-paper p-0.5", className)}
+      className={cn(
+        "flex items-center gap-0.5 rounded-[var(--radius)] border border-line bg-paper p-0.5",
+        orientation === "vertical" && "flex-col",
+        className,
+      )}
     >
       {OPTIONS.map(({ value, label, icon: Icon }) => (
         <button

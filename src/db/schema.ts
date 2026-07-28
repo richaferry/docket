@@ -48,6 +48,7 @@ export const invoices = sqliteTable("invoices", {
     .default("draft"),
   issueDate: integer("issue_date", { mode: "timestamp_ms" }).notNull(),
   dueDate: integer("due_date", { mode: "timestamp_ms" }).notNull(),
+  paymentTerms: text("payment_terms").notNull().default("net_14"),
   currency: text("currency").notNull().default("USD"),
   taxLabel: text("tax_label").notNull().default("Tax"),
   taxRate: real("tax_rate").notNull().default(0),
@@ -96,7 +97,7 @@ export const settings = sqliteTable("settings", {
   nextInvoiceNumber: integer("next_invoice_number").notNull().default(1),
   currency: text("currency").notNull().default("USD"),
   defaultTerms: text("default_terms").notNull().default("Payment due within 14 days."),
-  publicUrl: text("public_url"),
+  defaultPaymentTerms: text("default_payment_terms").notNull().default("net_14"),
 
   emailProvider: text("email_provider", { enum: ["smtp", "mailanvil"] })
     .notNull()

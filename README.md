@@ -10,9 +10,10 @@ place, running on your own machine or server.
 
 - **Clients** — contact details, status (lead/active/archived), and a running
   activity timeline (notes, calls, meetings, plus auto-logged invoice events)
-- **Invoices** — line items, tax and discount, draft → sent → overdue → paid
-  lifecycle, PDF export, and a no-login shareable link for clients to view
-  and download their invoice
+- **Invoices** — line items, tax and discount, payment terms (Net 7/14/30/45/60,
+  due on receipt, or custom) that auto-calculate the due date, multi-currency
+  support, draft → sent → overdue → paid lifecycle, PDF export, and a no-login
+  shareable link for clients to view and download their invoice
 - **Dashboard** — outstanding balance, overdue amount, revenue this month,
   recent activity
 - **Settings** — business profile, invoice numbering, default tax rate,
@@ -34,6 +35,22 @@ to `/setup` to create your admin account and business name.
 Data lives in a local SQLite file at `data/app.db`, created and migrated
 automatically on startup — nothing to run by hand. It's gitignored; back it up
 however you like.
+
+## Configuration
+
+Everything workspace-related (business profile, invoice defaults, email
+provider) is configured through the Settings page. One exception is the
+**Public URL** — where this app is reachable from the internet, used to build
+the client-facing invoice link in emails — which is deployment config, not
+workspace data, so it's set via an environment variable instead:
+
+```bash
+# .env
+PUBLIC_URL=https://invoices.yourdomain.com
+```
+
+Sending invoices is disabled with a clear error until this is set. Restart
+the server after changing it.
 
 ## Sending invoices by email
 

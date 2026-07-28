@@ -9,8 +9,10 @@ import {
   changePassword,
 } from "@/actions/settings";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Textarea } from "@/components/ui/field";
+import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
+import { CURRENCIES } from "@/lib/currencies";
+import { PAYMENT_TERMS } from "@/lib/payment-terms";
 import type { Settings } from "@/lib/settings";
 
 function SavedNote({ show }: { show?: boolean }) {
@@ -22,7 +24,13 @@ function SavedNote({ show }: { show?: boolean }) {
   );
 }
 
-export function BusinessProfileForm({ settings }: { settings: Settings }) {
+export function BusinessProfileForm({
+  settings,
+  publicUrl,
+}: {
+  settings: Settings;
+  publicUrl: string | null;
+}) {
   const [state, formAction, pending] = useActionState(updateBusinessProfile, undefined);
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -45,20 +53,6 @@ export function BusinessProfileForm({ settings }: { settings: Settings }) {
         <Field label="Address" htmlFor="businessAddress">
           <Input id="businessAddress" name="businessAddress" defaultValue={settings.businessAddress} />
         </Field>
-        <Field
-          label="Public URL"
-          htmlFor="publicUrl"
-          className="col-span-2"
-          hint="Where this app is reachable from the internet — used to build the client-facing invoice link in emails, e.g. https://invoices.yourdomain.com"
-        >
-          <Input
-            id="publicUrl"
-            name="publicUrl"
-            type="url"
-            placeholder="https://invoices.yourdomain.com"
-            defaultValue={settings.publicUrl ?? ""}
-          />
-        </Field>
       </div>
       {state?.error && <p role="alert" className="text-sm text-danger">{state.error}</p>}
       <div className="flex items-center gap-3">
@@ -67,6 +61,16 @@ export function BusinessProfileForm({ settings }: { settings: Settings }) {
         </Button>
         <SavedNote show={state?.success} />
       </div>
+      <p className="border-t border-line pt-3 text-xs text-ink-muted">
+        Public URL (used for client-facing invoice links):{" "}
+        {publicUrl ? (
+          <span className="font-tabular text-ink">{publicUrl}</span>
+        ) : (
+          <span className="text-warning">not set</span>
+        )}{" "}
+        — configured via the <code className="font-tabular">PUBLIC_URL</code> environment variable, not
+        here.
+      </p>
     </form>
   );
 }
@@ -77,7 +81,22 @@ export function InvoiceDefaultsForm({ settings }: { settings: Settings }) {
     <form action={formAction} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Currency" htmlFor="currency">
-          <Input id="currency" name="currency" defaultValue={settings.currency} required />
+          <Select id="currency" name="currency" defaultValue={settings.currency} required>
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Default payment terms" htmlFor="defaultPaymentTerms">
+          <Select id="defaultPaymentTerms" name="defaultPaymentTerms" defaultValue={settings.defaultPaymentTerms}>
+            {PAYMENT_TERMS.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </Select>
         </Field>
         <Field label="Tax label" htmlFor="taxLabel">
           <Input id="taxLabel" name="taxLabel" defaultValue={settings.taxLabel} required />

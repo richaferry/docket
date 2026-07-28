@@ -59,6 +59,7 @@ export type InvoicePdfData = {
   number: string;
   issueDate: Date | number;
   dueDate: Date | number;
+  paymentTermsLabel?: string;
   currency: string;
   items: { description: string; quantity: number; unitPrice: number }[];
   subtotal: number;
@@ -100,7 +101,12 @@ export function InvoiceDocument({ data }: { data: InvoicePdfData }) {
             <View style={styles.invoiceMeta}>
               <Text>{data.number}</Text>
               <Text style={styles.muted}>Issued {date(data.issueDate)}</Text>
-              <Text style={styles.muted}>Due {date(data.dueDate)}</Text>
+              <Text style={styles.muted}>
+                Due {date(data.dueDate)}
+                {data.paymentTermsLabel && data.paymentTermsLabel !== "Custom"
+                  ? ` (${data.paymentTermsLabel})`
+                  : ""}
+              </Text>
             </View>
           </View>
         </View>

@@ -2,6 +2,7 @@ import { desc } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
 import { invoices, clients, activities } from "@/db/schema";
+import { getSettings } from "@/lib/settings";
 import { PageHeader } from "@/components/page-header";
 import { LinkButton } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
@@ -21,6 +22,7 @@ const ACTIVITY_ICON = {
 };
 
 export default function DashboardPage() {
+  const settings = getSettings();
   const allInvoices = db.select().from(invoices).orderBy(desc(invoices.issueDate)).all();
   const allClients = db.select().from(clients).all();
   const recentActivity = db
@@ -77,14 +79,14 @@ export default function DashboardPage() {
       />
 
       <div className="grid grid-cols-2 gap-4 px-4 py-6 sm:px-8 lg:grid-cols-4">
-        <StatTile label="Outstanding" value={formatMoney(outstanding, "USD")} tone="accent" />
+        <StatTile label="Outstanding" value={formatMoney(outstanding, settings.currency)} tone="accent" />
         <StatTile
           label="Overdue"
-          value={formatMoney(overdueTotal, "USD")}
+          value={formatMoney(overdueTotal, settings.currency)}
           sub={overdue.length ? `${overdue.length} invoice${overdue.length > 1 ? "s" : ""}` : undefined}
           tone={overdue.length ? "danger" : "neutral"}
         />
-        <StatTile label="Paid this month" value={formatMoney(paidThisMonth, "USD")} tone="success" />
+        <StatTile label="Paid this month" value={formatMoney(paidThisMonth, settings.currency)} tone="success" />
         <StatTile label="Active clients" value={String(activeClients)} tone="neutral" />
       </div>
 

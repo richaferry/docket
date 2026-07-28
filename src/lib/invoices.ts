@@ -2,6 +2,7 @@ import { eq, asc } from "drizzle-orm";
 import { db } from "@/db";
 import { invoices, invoiceItems, clients } from "@/db/schema";
 import { getSettings, updateSettings } from "@/lib/settings";
+import { paymentTermsLabel } from "@/lib/payment-terms";
 import type { InvoicePdfData } from "@/lib/pdf/invoice-document";
 
 export type InvoiceItemInput = {
@@ -58,6 +59,7 @@ export function buildInvoicePdfData(invoiceId: string): InvoicePdfData {
     number: invoice.number,
     issueDate: invoice.issueDate,
     dueDate: invoice.dueDate,
+    paymentTermsLabel: paymentTermsLabel(invoice.paymentTerms),
     currency: invoice.currency,
     items: items.map((i) => ({
       description: i.description,

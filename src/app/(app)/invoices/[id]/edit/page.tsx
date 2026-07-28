@@ -39,6 +39,7 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
             clientId: invoice.clientId,
             issueDate: new Date(invoice.issueDate).toISOString(),
             dueDate: new Date(invoice.dueDate).toISOString(),
+            paymentTerms: invoice.paymentTerms,
             currency: invoice.currency,
             taxLabel: invoice.taxLabel,
             taxRate: invoice.taxRate,

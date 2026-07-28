@@ -1,4 +1,5 @@
 import { getSettings } from "@/lib/settings";
+import { getPublicUrl } from "@/lib/env";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import {
@@ -10,6 +11,7 @@ import {
 
 export default function SettingsPage() {
   const settings = getSettings();
+  const publicUrl = getPublicUrl();
 
   return (
     <div>
@@ -20,7 +22,7 @@ export default function SettingsPage() {
             <h2 className="font-medium text-ink">Business profile</h2>
           </CardHeader>
           <CardBody>
-            <BusinessProfileForm settings={settings} />
+            <BusinessProfileForm settings={settings} publicUrl={publicUrl} />
           </CardBody>
         </Card>
 
