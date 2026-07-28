@@ -18,14 +18,21 @@ export function ActivityForm({ clientId }: { clientId: string }) {
 
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-2 p-4">
-      <div className="flex gap-2">
-        <Select name="type" className="w-32 shrink-0" defaultValue="note">
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <label className="sr-only" htmlFor="activity-type">
+          Activity type
+        </label>
+        <Select id="activity-type" name="type" className="w-full shrink-0 sm:w-32" defaultValue="note">
           <option value="note">Note</option>
           <option value="call">Call</option>
           <option value="email">Email</option>
           <option value="meeting">Meeting</option>
         </Select>
+        <label className="sr-only" htmlFor="activity-content">
+          Log a note, call, or meeting
+        </label>
         <Textarea
+          id="activity-content"
           name="content"
           placeholder="Log a note, call, or meeting…"
           rows={2}
@@ -33,7 +40,7 @@ export function ActivityForm({ clientId }: { clientId: string }) {
           required
         />
       </div>
-      {state?.error && <p className="text-xs text-danger">{state.error}</p>}
+      {state?.error && <p role="alert" className="text-xs text-danger">{state.error}</p>}
       <div>
         <Button type="submit" size="sm" variant="secondary" disabled={pending}>
           {pending ? "Logging…" : "Log activity"}

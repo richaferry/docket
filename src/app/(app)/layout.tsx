@@ -16,9 +16,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const settings = getSettings();
 
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="flex min-h-screen w-full flex-col md:flex-row">
       <Sidebar businessName={settings.businessName} />
-      <main className="flex-1 min-w-0">{children}</main>
+      <main id="main-content" tabIndex={-1} className="flex-1 min-w-0">
+        {children}
+      </main>
     </div>
   );
 }

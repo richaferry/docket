@@ -92,7 +92,7 @@ export function InvoiceForm({
         )}
       />
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="Client" htmlFor="clientId">
           <Select id="clientId" name="clientId" defaultValue={defaultValues?.clientId ?? ""} required>
             <option value="" disabled>
@@ -147,25 +147,31 @@ export function InvoiceForm({
         <div className="mb-2 flex items-center justify-between">
           <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">Line items</p>
           <Button type="button" variant="ghost" size="sm" onClick={addItem}>
-            <Plus size={14} /> Add row
+            <Plus size={14} aria-hidden="true" /> Add row
           </Button>
         </div>
-        <div className="overflow-hidden rounded-lg border border-line">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border border-line">
+          <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="bg-neutral-soft/50 text-left text-xs uppercase tracking-wide text-ink-muted">
-                <th className="px-3 py-2 font-medium">Description</th>
-                <th className="w-24 px-3 py-2 font-medium">Qty</th>
-                <th className="w-32 px-3 py-2 font-medium">Rate</th>
-                <th className="w-32 px-3 py-2 text-right font-medium">Amount</th>
-                <th className="w-10 px-3 py-2" />
+                <th scope="col" className="px-3 py-2 font-medium">Description</th>
+                <th scope="col" className="w-24 px-3 py-2 font-medium">Qty</th>
+                <th scope="col" className="w-32 px-3 py-2 font-medium">Rate</th>
+                <th scope="col" className="w-32 px-3 py-2 text-right font-medium">Amount</th>
+                <th scope="col" className="w-10 px-3 py-2">
+                  <span className="sr-only">Remove</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, index) => (
                 <tr key={index} className="border-t border-line">
                   <td className="px-3 py-2">
+                    <label className="sr-only" htmlFor={`item-description-${index}`}>
+                      Item {index + 1} description
+                    </label>
                     <input
+                      id={`item-description-${index}`}
                       className="w-full bg-transparent text-sm outline-none placeholder:text-ink-muted/60"
                       placeholder="Design sprint, week 1"
                       value={item.description}
@@ -174,7 +180,11 @@ export function InvoiceForm({
                     />
                   </td>
                   <td className="px-3 py-2">
+                    <label className="sr-only" htmlFor={`item-qty-${index}`}>
+                      Item {index + 1} quantity
+                    </label>
                     <input
+                      id={`item-qty-${index}`}
                       type="number"
                       min="0"
                       step="any"
@@ -184,7 +194,11 @@ export function InvoiceForm({
                     />
                   </td>
                   <td className="px-3 py-2">
+                    <label className="sr-only" htmlFor={`item-rate-${index}`}>
+                      Item {index + 1} rate
+                    </label>
                     <input
+                      id={`item-rate-${index}`}
                       type="number"
                       min="0"
                       step="any"
@@ -200,9 +214,10 @@ export function InvoiceForm({
                     <button
                       type="button"
                       onClick={() => removeItem(index)}
+                      aria-label={`Remove item ${index + 1}`}
                       className="text-ink-muted hover:text-danger"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={14} aria-hidden="true" />
                     </button>
                   </td>
                 </tr>
@@ -212,7 +227,7 @@ export function InvoiceForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
         <div className="flex flex-col gap-4">
           <Field label="Tax label" htmlFor="taxLabel">
             <Input id="taxLabel" name="taxLabel" defaultValue={defaultValues?.taxLabel ?? "Tax"} />
@@ -264,7 +279,7 @@ export function InvoiceForm({
         </div>
       </div>
 
-      {state?.error && <p className="text-sm text-danger">{state.error}</p>}
+      {state?.error && <p role="alert" className="text-sm text-danger">{state.error}</p>}
 
       <div className="flex gap-2">
         <Button type="submit" disabled={pending}>

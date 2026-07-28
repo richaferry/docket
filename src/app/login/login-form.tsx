@@ -19,7 +19,11 @@ export function LoginForm() {
           <Field label="Password" htmlFor="password">
             <Input id="password" name="password" type="password" required />
           </Field>
-          {state?.error && <p className="text-sm text-danger">{state.error}</p>}
+          {state?.error && (
+            <p role="alert" className="text-sm text-danger">
+              {state.error}
+            </p>
+          )}
           <Button type="submit" size="lg" disabled={pending} className="mt-2">
             {pending ? "Signing in…" : "Sign in"}
           </Button>

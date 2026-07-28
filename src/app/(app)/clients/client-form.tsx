@@ -28,7 +28,7 @@ export function ClientForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Contact name" htmlFor="name">
           <Input id="name" name="name" defaultValue={defaultValues?.name} required autoFocus />
         </Field>
@@ -56,7 +56,7 @@ export function ClientForm({
         <Textarea id="notes" name="notes" defaultValue={defaultValues?.notes ?? ""} rows={4} />
       </Field>
 
-      {state?.error && <p className="text-sm text-danger">{state.error}</p>}
+      {state?.error && <p role="alert" className="text-sm text-danger">{state.error}</p>}
 
       <div className="flex gap-2">
         <Button type="submit" disabled={pending}>

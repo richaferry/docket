@@ -43,36 +43,39 @@ export default async function InvoicesPage({
         actions={<LinkButton href="/invoices/new">New invoice</LinkButton>}
       />
 
-      <div className="flex gap-1 border-b border-line px-8 pt-4">
-        {FILTERS.map((f) => (
-          <Link
-            key={f.value}
-            href={f.value === "all" ? "/invoices" : `/invoices?status=${f.value}`}
-            className={cn(
-              "rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors",
-              active === f.value
-                ? "border-accent text-accent"
-                : "border-transparent text-ink-muted hover:text-ink",
-            )}
-          >
-            {f.label}
-          </Link>
-        ))}
-      </div>
+      <nav aria-label="Filter invoices by status" className="overflow-x-auto border-b border-line px-4 pt-4 sm:px-8">
+        <div className="flex w-max gap-1">
+          {FILTERS.map((f) => (
+            <Link
+              key={f.value}
+              href={f.value === "all" ? "/invoices" : `/invoices?status=${f.value}`}
+              aria-current={active === f.value ? "page" : undefined}
+              className={cn(
+                "whitespace-nowrap rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors",
+                active === f.value
+                  ? "border-accent text-accent"
+                  : "border-transparent text-ink-muted hover:text-ink",
+              )}
+            >
+              {f.label}
+            </Link>
+          ))}
+        </div>
+      </nav>
 
-      <div className="px-8 py-6">
+      <div className="px-4 py-6 sm:px-8">
         {filtered.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="overflow-hidden rounded-lg border border-line">
+          <div className="overflow-x-auto rounded-lg border border-line">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line bg-neutral-soft/50 text-left text-xs font-medium uppercase tracking-wide text-ink-muted">
-                  <th className="px-4 py-3 font-medium">Number</th>
-                  <th className="px-4 py-3 font-medium">Client</th>
-                  <th className="px-4 py-3 font-medium">Due</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium text-right">Total</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Number</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Client</th>
+                  <th scope="col" className="hidden px-4 py-3 font-medium sm:table-cell">Due</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                  <th scope="col" className="px-4 py-3 font-medium text-right">Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -93,7 +96,7 @@ export default async function InvoicesPage({
                         </Link>
                       </td>
                       <td className="px-4 py-3 text-ink-muted">{client?.name ?? "—"}</td>
-                      <td className="px-4 py-3 text-ink-muted">{formatDate(invoice.dueDate)}</td>
+                      <td className="hidden px-4 py-3 text-ink-muted sm:table-cell">{formatDate(invoice.dueDate)}</td>
                       <td className="px-4 py-3">
                         <Badge tone={INVOICE_STATUS_TONE[displayStatus]}>{displayStatus}</Badge>
                       </td>
@@ -115,7 +118,7 @@ export default async function InvoicesPage({
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-line py-20 text-center">
-      <FileText className="text-ink-muted" size={28} strokeWidth={1.5} />
+      <FileText className="text-ink-muted" size={28} strokeWidth={1.5} aria-hidden="true" />
       <div>
         <p className="font-display text-lg text-ink">No invoices here</p>
         <p className="text-sm text-ink-muted">Create your first invoice to get paid.</p>

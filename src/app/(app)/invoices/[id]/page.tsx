@@ -35,44 +35,46 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         actions={<InvoiceActions id={invoice.id} status={displayStatus} publicId={invoice.publicId} />}
       />
 
-      <div className="grid grid-cols-3 gap-6 px-8 py-6">
-        <div className="col-span-2 flex flex-col gap-6">
+      <div className="grid grid-cols-1 gap-6 px-4 py-6 sm:px-8 lg:grid-cols-3">
+        <div className="flex flex-col gap-6 lg:col-span-2">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex-wrap gap-y-2">
               <div className="flex items-center gap-3">
-                <p className="font-medium text-ink">Line items</p>
+                <h2 className="font-medium text-ink">Line items</h2>
                 <Badge tone={INVOICE_STATUS_TONE[displayStatus]}>{displayStatus}</Badge>
               </div>
               <span className="font-tabular text-lg text-accent">
                 {formatMoney(invoice.total, invoice.currency)}
               </span>
             </CardHeader>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-ink-muted">
-                  <th className="px-5 py-3 font-medium">Description</th>
-                  <th className="px-3 py-3 font-medium text-right">Qty</th>
-                  <th className="px-3 py-3 font-medium text-right">Rate</th>
-                  <th className="px-5 py-3 font-medium text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id} className="border-b border-line last:border-0">
-                    <td className="px-5 py-3">{item.description}</td>
-                    <td className="px-3 py-3 text-right font-tabular text-ink-muted">
-                      {item.quantity}
-                    </td>
-                    <td className="px-3 py-3 text-right font-tabular text-ink-muted">
-                      {formatMoney(item.unitPrice, invoice.currency)}
-                    </td>
-                    <td className="px-5 py-3 text-right font-tabular">
-                      {formatMoney(item.quantity * item.unitPrice, invoice.currency)}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[480px] text-sm">
+                <thead>
+                  <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-ink-muted">
+                    <th scope="col" className="px-5 py-3 font-medium">Description</th>
+                    <th scope="col" className="px-3 py-3 font-medium text-right">Qty</th>
+                    <th scope="col" className="px-3 py-3 font-medium text-right">Rate</th>
+                    <th scope="col" className="px-5 py-3 font-medium text-right">Amount</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {items.map((item) => (
+                    <tr key={item.id} className="border-b border-line last:border-0">
+                      <td className="px-5 py-3">{item.description}</td>
+                      <td className="px-3 py-3 text-right font-tabular text-ink-muted">
+                        {item.quantity}
+                      </td>
+                      <td className="px-3 py-3 text-right font-tabular text-ink-muted">
+                        {formatMoney(item.unitPrice, invoice.currency)}
+                      </td>
+                      <td className="px-5 py-3 text-right font-tabular">
+                        {formatMoney(item.quantity * item.unitPrice, invoice.currency)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             <div className="flex justify-end border-t border-line px-5 py-4">
               <div className="flex w-64 flex-col gap-1.5 text-sm">
                 <div className="flex justify-between">
@@ -126,7 +128,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <p className="font-medium text-ink">Client</p>
+              <h2 className="font-medium text-ink">Client</h2>
             </CardHeader>
             <CardBody className="flex flex-col gap-2 text-sm">
               {client ? (
@@ -145,7 +147,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
           <Card>
             <CardHeader>
-              <p className="font-medium text-ink">Timeline</p>
+              <h2 className="font-medium text-ink">Timeline</h2>
             </CardHeader>
             <CardBody className="flex flex-col gap-2 text-sm">
               <TimelineRow label="Issued" value={formatDate(invoice.issueDate)} />

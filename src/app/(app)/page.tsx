@@ -76,7 +76,7 @@ export default function DashboardPage() {
         }
       />
 
-      <div className="grid grid-cols-4 gap-4 px-8 py-6">
+      <div className="grid grid-cols-2 gap-4 px-4 py-6 sm:px-8 lg:grid-cols-4">
         <StatTile label="Outstanding" value={formatMoney(outstanding, "USD")} tone="accent" />
         <StatTile
           label="Overdue"
@@ -88,10 +88,10 @@ export default function DashboardPage() {
         <StatTile label="Active clients" value={String(activeClients)} tone="neutral" />
       </div>
 
-      <div className="grid grid-cols-3 gap-6 px-8 pb-8">
-        <Card className="col-span-2">
+      <div className="grid grid-cols-1 gap-6 px-4 pb-8 sm:px-8 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
           <div className="flex items-center justify-between border-b border-line px-5 py-4">
-            <p className="font-medium text-ink">Payments due</p>
+            <h2 className="font-medium text-ink">Payments due</h2>
             <Link href="/invoices" className="text-sm text-ink-muted hover:text-accent">
               View all
             </Link>
@@ -132,7 +132,7 @@ export default function DashboardPage() {
 
         <Card>
           <div className="border-b border-line px-5 py-4">
-            <p className="font-medium text-ink">Recent activity</p>
+            <h2 className="font-medium text-ink">Recent activity</h2>
           </div>
           {recentActivity.length === 0 ? (
             <p className="px-5 py-10 text-center text-sm text-ink-muted">Nothing logged yet.</p>
@@ -143,7 +143,12 @@ export default function DashboardPage() {
                 const Icon = ACTIVITY_ICON[entry.type];
                 return (
                   <li key={entry.id} className="flex gap-3 px-5 py-3">
-                    <Icon size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-ink-muted" />
+                    <Icon
+                      size={15}
+                      strokeWidth={2}
+                      aria-hidden="true"
+                      className="mt-0.5 shrink-0 text-ink-muted"
+                    />
                     <div className="min-w-0">
                       <p className="truncate text-sm text-ink">{entry.content}</p>
                       <p className="text-xs text-ink-muted">

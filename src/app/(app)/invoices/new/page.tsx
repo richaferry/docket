@@ -19,7 +19,7 @@ export default async function NewInvoicePage({
   return (
     <div>
       <PageHeader eyebrow="Invoices" title="New invoice" />
-      <div className="px-8 py-6">
+      <div className="px-4 py-6 sm:px-8">
         <InvoiceForm
           action={createInvoice}
           clients={allClients}

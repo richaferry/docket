@@ -58,11 +58,11 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         }
       />
 
-      <div className="grid grid-cols-3 gap-6 px-8 py-6">
-        <div className="col-span-2 flex flex-col gap-6">
+      <div className="grid grid-cols-1 gap-6 px-4 py-6 sm:px-8 lg:grid-cols-3">
+        <div className="flex flex-col gap-6 lg:col-span-2">
           <Card>
             <CardHeader>
-              <p className="font-medium text-ink">Activity</p>
+              <h2 className="font-medium text-ink">Activity</h2>
             </CardHeader>
             <ActivityForm clientId={client.id} />
             <div className="border-t border-line">
@@ -74,7 +74,12 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
                     const Icon = ACTIVITY_ICON[entry.type];
                     return (
                       <li key={entry.id} className="flex gap-3 px-4 py-3">
-                        <Icon size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-ink-muted" />
+                        <Icon
+                          size={16}
+                          strokeWidth={2}
+                          aria-hidden="true"
+                          className="mt-0.5 shrink-0 text-ink-muted"
+                        />
                         <div className="min-w-0">
                           <p className="text-sm text-ink">{entry.content}</p>
                           <p className="text-xs text-ink-muted">{formatDateTime(entry.createdAt)}</p>
@@ -89,7 +94,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 
           <Card>
             <CardHeader>
-              <p className="font-medium text-ink">Invoices</p>
+              <h2 className="font-medium text-ink">Invoices</h2>
             </CardHeader>
             {clientInvoices.length === 0 ? (
               <p className="px-4 py-6 text-center text-sm text-ink-muted">No invoices for this client yet.</p>
@@ -125,7 +130,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <p className="font-medium text-ink">Details</p>
+              <h2 className="font-medium text-ink">Details</h2>
               <Badge tone={CLIENT_STATUS_TONE[client.status]}>{client.status}</Badge>
             </CardHeader>
             <CardBody className="flex flex-col gap-3 text-sm">
@@ -139,7 +144,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           {client.notes && (
             <Card>
               <CardHeader>
-                <p className="font-medium text-ink">Notes</p>
+                <h2 className="font-medium text-ink">Notes</h2>
               </CardHeader>
               <CardBody>
                 <p className="whitespace-pre-wrap text-sm text-ink-muted">{client.notes}</p>

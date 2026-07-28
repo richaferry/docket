@@ -21,18 +21,18 @@ export default function ClientsPage() {
         actions={<LinkButton href="/clients/new">New client</LinkButton>}
       />
 
-      <div className="px-8 py-6">
+      <div className="px-4 py-6 sm:px-8">
         {allClients.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="overflow-hidden rounded-lg border border-line">
+          <div className="overflow-x-auto rounded-lg border border-line">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line bg-neutral-soft/50 text-left text-xs font-medium uppercase tracking-wide text-ink-muted">
-                  <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Company</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium text-right">Outstanding</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Name</th>
+                  <th scope="col" className="hidden px-4 py-3 font-medium sm:table-cell">Company</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                  <th scope="col" className="px-4 py-3 font-medium text-right">Outstanding</th>
                 </tr>
               </thead>
               <tbody>
@@ -50,7 +50,7 @@ export default function ClientsPage() {
                         </Link>
                         <p className="text-xs text-ink-muted">{client.email}</p>
                       </td>
-                      <td className="px-4 py-3 text-ink-muted">{client.company || "—"}</td>
+                      <td className="hidden px-4 py-3 text-ink-muted sm:table-cell">{client.company || "—"}</td>
                       <td className="px-4 py-3">
                         <Badge tone={CLIENT_STATUS_TONE[client.status]}>{client.status}</Badge>
                       </td>
@@ -72,7 +72,7 @@ export default function ClientsPage() {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-line py-20 text-center">
-      <Users className="text-ink-muted" size={28} strokeWidth={1.5} />
+      <Users className="text-ink-muted" size={28} strokeWidth={1.5} aria-hidden="true" />
       <div>
         <p className="font-display text-lg text-ink">No clients yet</p>
         <p className="text-sm text-ink-muted">Add your first client to start tracking work.</p>

@@ -14,10 +14,10 @@ export default function SettingsPage() {
   return (
     <div>
       <PageHeader eyebrow="Workspace" title="Settings" />
-      <div className="flex max-w-3xl flex-col gap-6 px-8 py-6">
+      <div className="flex max-w-3xl flex-col gap-6 px-4 py-6 sm:px-8">
         <Card>
           <CardHeader>
-            <p className="font-medium text-ink">Business profile</p>
+            <h2 className="font-medium text-ink">Business profile</h2>
           </CardHeader>
           <CardBody>
             <BusinessProfileForm settings={settings} />
@@ -26,7 +26,7 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <p className="font-medium text-ink">Invoice defaults</p>
+            <h2 className="font-medium text-ink">Invoice defaults</h2>
           </CardHeader>
           <CardBody>
             <InvoiceDefaultsForm settings={settings} />
@@ -35,7 +35,7 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <p className="font-medium text-ink">Email delivery</p>
+            <h2 className="font-medium text-ink">Email delivery</h2>
           </CardHeader>
           <CardBody>
             <EmailSettingsForm settings={settings} />
@@ -44,7 +44,7 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <p className="font-medium text-ink">Security</p>
+            <h2 className="font-medium text-ink">Security</h2>
           </CardHeader>
           <CardBody>
             <ChangePasswordForm />

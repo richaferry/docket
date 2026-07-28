@@ -34,7 +34,11 @@ export function SetupForm() {
           <Field label="Password" htmlFor="password" hint="At least 8 characters.">
             <Input id="password" name="password" type="password" minLength={8} required />
           </Field>
-          {state?.error && <p className="text-sm text-danger">{state.error}</p>}
+          {state?.error && (
+            <p role="alert" className="text-sm text-danger">
+              {state.error}
+            </p>
+          )}
           <Button type="submit" size="lg" disabled={pending} className="mt-2">
             {pending ? "Setting up…" : "Create workspace"}
           </Button>

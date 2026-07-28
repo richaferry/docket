@@ -16,7 +16,7 @@ export function DeleteClientButton({ id }: { id: string }) {
       }}
       className="flex items-center gap-2"
     >
-      {state?.error && <p className="text-xs text-danger">{state.error}</p>}
+      {state?.error && <p role="alert" className="text-xs text-danger">{state.error}</p>}
       <Button type="submit" variant="danger" size="sm" disabled={pending}>
         {pending ? "Deleting…" : "Delete client"}
       </Button>

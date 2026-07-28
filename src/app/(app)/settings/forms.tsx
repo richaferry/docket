@@ -15,14 +15,18 @@ import type { Settings } from "@/lib/settings";
 
 function SavedNote({ show }: { show?: boolean }) {
   if (!show) return null;
-  return <p className="text-sm text-success">Saved.</p>;
+  return (
+    <p role="status" className="text-sm text-success">
+      Saved.
+    </p>
+  );
 }
 
 export function BusinessProfileForm({ settings }: { settings: Settings }) {
   const [state, formAction, pending] = useActionState(updateBusinessProfile, undefined);
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Business name" htmlFor="businessName">
           <Input id="businessName" name="businessName" defaultValue={settings.businessName} required />
         </Field>
@@ -56,7 +60,7 @@ export function BusinessProfileForm({ settings }: { settings: Settings }) {
           />
         </Field>
       </div>
-      {state?.error && <p className="text-sm text-danger">{state.error}</p>}
+      {state?.error && <p role="alert" className="text-sm text-danger">{state.error}</p>}
       <div className="flex items-center gap-3">
         <Button type="submit" size="sm" disabled={pending}>
           {pending ? "Saving…" : "Save"}
@@ -71,7 +75,7 @@ export function InvoiceDefaultsForm({ settings }: { settings: Settings }) {
   const [state, formAction, pending] = useActionState(updateInvoiceDefaults, undefined);
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Currency" htmlFor="currency">
           <Input id="currency" name="currency" defaultValue={settings.currency} required />
         </Field>
@@ -112,7 +116,7 @@ export function InvoiceDefaultsForm({ settings }: { settings: Settings }) {
           rows={3}
         />
       </Field>
-      {state?.error && <p className="text-sm text-danger">{state.error}</p>}
+      {state?.error && <p role="alert" className="text-sm text-danger">{state.error}</p>}
       <div className="flex items-center gap-3">
         <Button type="submit" size="sm" disabled={pending}>
           {pending ? "Saving…" : "Save"}
@@ -131,11 +135,12 @@ export function EmailSettingsForm({ settings }: { settings: Settings }) {
   return (
     <div className="flex flex-col gap-6">
       <form action={formAction} className="flex flex-col gap-4">
-        <div className="flex gap-2">
+        <div role="group" aria-label="Email provider" className="flex flex-wrap gap-2">
           {(["smtp", "mailanvil"] as const).map((option) => (
             <button
               key={option}
               type="button"
+              aria-pressed={provider === option}
               onClick={() => setProvider(option)}
               className={cn(
                 "rounded-[var(--radius)] border px-3 py-1.5 text-sm font-medium transition-colors",
@@ -151,7 +156,7 @@ export function EmailSettingsForm({ settings }: { settings: Settings }) {
         </div>
 
         {provider === "smtp" ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="SMTP host" htmlFor="smtpHost">
               <Input id="smtpHost" name="smtpHost" defaultValue={settings.smtpHost ?? ""} placeholder="smtp.gmail.com" />
             </Field>
@@ -172,7 +177,7 @@ export function EmailSettingsForm({ settings }: { settings: Settings }) {
             </Field>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="MailAnvil API key" htmlFor="mailanvilApiKey" className="col-span-2">
               <Input
                 id="mailanvilApiKey"
@@ -197,7 +202,7 @@ export function EmailSettingsForm({ settings }: { settings: Settings }) {
             Use SSL/TLS (port 465)
           </label>
         )}
-        {state?.error && <p className="text-sm text-danger">{state.error}</p>}
+        {state?.error && <p role="alert" className="text-sm text-danger">{state.error}</p>}
         <div className="flex items-center gap-3">
           <Button type="submit" size="sm" disabled={pending}>
             {pending ? "Saving…" : "Save"}
@@ -206,7 +211,7 @@ export function EmailSettingsForm({ settings }: { settings: Settings }) {
         </div>
       </form>
 
-      <form action={testAction} className="flex items-end gap-3 border-t border-line pt-4">
+      <form action={testAction} className="flex flex-col gap-3 border-t border-line pt-4 sm:flex-row sm:items-end">
         <Field label="Send a test email to" htmlFor="testEmailTo" className="flex-1">
           <Input id="testEmailTo" name="testEmailTo" type="email" placeholder="you@studio.com" />
         </Field>
@@ -214,8 +219,12 @@ export function EmailSettingsForm({ settings }: { settings: Settings }) {
           {testPending ? "Sending…" : "Send test"}
         </Button>
       </form>
-      {testState?.error && <p className="text-sm text-danger">{testState.error}</p>}
-      {testState?.success && <p className="text-sm text-success">Test email sent — check your inbox.</p>}
+      {testState?.error && <p role="alert" className="text-sm text-danger">{testState.error}</p>}
+      {testState?.success && (
+        <p role="status" className="text-sm text-success">
+          Test email sent — check your inbox.
+        </p>
+      )}
     </div>
   );
 }
@@ -224,7 +233,7 @@ export function ChangePasswordForm() {
   const [state, formAction, pending] = useActionState(changePassword, undefined);
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Current password" htmlFor="currentPassword">
           <Input id="currentPassword" name="currentPassword" type="password" required />
         </Field>
@@ -232,7 +241,7 @@ export function ChangePasswordForm() {
           <Input id="newPassword" name="newPassword" type="password" minLength={8} required />
         </Field>
       </div>
-      {state?.error && <p className="text-sm text-danger">{state.error}</p>}
+      {state?.error && <p role="alert" className="text-sm text-danger">{state.error}</p>}
       <div className="flex items-center gap-3">
         <Button type="submit" size="sm" disabled={pending}>
           {pending ? "Updating…" : "Update password"}

@@ -29,7 +29,7 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
         title={`Edit ${invoice.number}`}
         actions={invoice.status === "draft" ? <DeleteInvoiceButton id={invoice.id} /> : undefined}
       />
-      <div className="px-8 py-6">
+      <div className="px-4 py-6 sm:px-8">
         <InvoiceForm
           action={action}
           clients={allClients}

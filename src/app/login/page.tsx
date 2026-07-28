@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { isOnboarded } from "@/lib/settings";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginForm } from "./login-form";
 
 export default function LoginPage() {
@@ -8,14 +9,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-paper px-4">
+    <main id="main-content" tabIndex={-1} className="flex min-h-screen items-center justify-center bg-paper px-4 py-12">
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <p className="font-display text-2xl text-ink">Docket</p>
-          <p className="mt-1 text-sm text-ink-muted">Sign in to your workspace.</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div className="text-left">
+            <p className="font-display text-2xl text-ink">Docket</p>
+            <p className="mt-1 text-sm text-ink-muted">Sign in to your workspace.</p>
+          </div>
+          <ThemeToggle />
         </div>
         <LoginForm />
       </div>
-    </div>
+    </main>
   );
 }

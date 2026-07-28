@@ -21,7 +21,7 @@ export default async function EditClientPage({ params }: { params: Promise<{ id:
         title={`Edit ${client.name}`}
         actions={<DeleteClientButton id={client.id} />}
       />
-      <div className="max-w-2xl px-8 py-6">
+      <div className="max-w-2xl px-4 py-6 sm:px-8">
         <ClientForm action={action} defaultValues={client} cancelHref={`/clients/${client.id}`} />
       </div>
     </div>
