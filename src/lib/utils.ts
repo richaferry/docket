@@ -31,6 +31,20 @@ export function formatDateTime(date: Date | number) {
   }).format(date);
 }
 
+const HTML_ESCAPES: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
+
+// For interpolating admin-entered strings (client name, business name, ...)
+// into raw HTML email bodies, which — unlike JSX — aren't auto-escaped.
+export function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (ch) => HTML_ESCAPES[ch]);
+}
+
 export function todayISO(): string {
   return new Date().toISOString();
 }

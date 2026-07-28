@@ -185,8 +185,17 @@ export function EmailSettingsForm({ settings }: { settings: Settings }) {
             <Field label="SMTP username" htmlFor="smtpUser">
               <Input id="smtpUser" name="smtpUser" defaultValue={settings.smtpUser ?? ""} />
             </Field>
-            <Field label="SMTP password" htmlFor="smtpPass">
-              <Input id="smtpPass" name="smtpPass" type="password" defaultValue={settings.smtpPass ?? ""} />
+            <Field
+              label="SMTP password"
+              htmlFor="smtpPass"
+              hint={settings.smtpPass ? "Leave blank to keep the current password." : undefined}
+            >
+              <Input
+                id="smtpPass"
+                name="smtpPass"
+                type="password"
+                placeholder={settings.smtpPass ? "••••••••" : ""}
+              />
             </Field>
             <Field label="From name" htmlFor="fromName">
               <Input id="fromName" name="fromName" defaultValue={settings.fromName ?? ""} />
@@ -197,13 +206,17 @@ export function EmailSettingsForm({ settings }: { settings: Settings }) {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="MailAnvil API key" htmlFor="mailanvilApiKey" className="col-span-2">
+            <Field
+              label="MailAnvil API key"
+              htmlFor="mailanvilApiKey"
+              className="col-span-2"
+              hint={settings.mailanvilApiKey ? "Leave blank to keep the current key." : undefined}
+            >
               <Input
                 id="mailanvilApiKey"
                 name="mailanvilApiKey"
                 type="password"
-                defaultValue={settings.mailanvilApiKey ?? ""}
-                placeholder="re_..."
+                placeholder={settings.mailanvilApiKey ? "••••••••" : "re_..."}
               />
             </Field>
             <Field label="From name" htmlFor="fromName">

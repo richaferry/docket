@@ -1,6 +1,7 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getSettings } from "@/lib/settings";
 
 const SESSION_COOKIE = "session";
@@ -67,4 +68,18 @@ export async function verifySessionToken(token: string, secret: Uint8Array) {
   } catch {
     return null;
   }
+}
+
+// The authoritative auth check for every Server Action and authenticated
+// Route Handler. proxy.ts (Edge runtime) only checks cookie *presence* for
+// UX/fast-path redirecting — it cannot verify the JWT without a DB read, so
+// it must never be the only gate. Every mutating action and every handler
+// serving non-public data calls this first; a missing/invalid/expired
+// session redirects to /login instead of executing.
+export async function requireSession() {
+  const session = await getSession();
+  if (!session) {
+    redirect("/login");
+  }
+  return session;
 }

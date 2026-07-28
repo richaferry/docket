@@ -12,7 +12,9 @@ import { renderInvoicePdf } from "@/lib/pdf/invoice-document";
 import { sendMail, MailerNotConfiguredError, MailProviderError } from "@/lib/mailer";
 import { getSettings } from "@/lib/settings";
 import { getPublicUrl } from "@/lib/env";
-import { formatMoney, formatDate } from "@/lib/utils";
+import { requireSession } from "@/lib/auth";
+import { CURRENCY_CODES } from "@/lib/currencies";
+import { formatMoney, formatDate, escapeHtml } from "@/lib/utils";
 
 const itemSchema = z.object({
   description: z.string().min(1),
@@ -25,7 +27,7 @@ const invoiceSchema = z.object({
   issueDate: z.coerce.date(),
   dueDate: z.coerce.date(),
   paymentTerms: z.string().min(1).default("custom"),
-  currency: z.string().min(1),
+  currency: z.enum(CURRENCY_CODES, { message: "Choose a valid currency" }),
   taxLabel: z.string().min(1),
   taxRate: z.coerce.number().min(0),
   discount: z.coerce.number().min(0),
@@ -60,6 +62,7 @@ function parseInvoiceForm(formData: FormData) {
 }
 
 export async function createInvoice(_prev: unknown, formData: FormData) {
+  await requireSession();
   const parsed = parseInvoiceForm(formData);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -110,6 +113,7 @@ export async function createInvoice(_prev: unknown, formData: FormData) {
 }
 
 export async function updateInvoice(id: string, _prev: unknown, formData: FormData) {
+  await requireSession();
   const parsed = parseInvoiceForm(formData);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -162,12 +166,14 @@ export async function updateInvoice(id: string, _prev: unknown, formData: FormDa
 }
 
 export async function deleteInvoice(id: string) {
+  await requireSession();
   db.delete(invoices).where(eq(invoices.id, id)).run();
   revalidatePath("/invoices");
   redirect("/invoices");
 }
 
 export async function sendInvoice(id: string) {
+  await requireSession();
   const invoice = db.select().from(invoices).where(eq(invoices.id, id)).get();
   if (!invoice) return { error: "Invoice not found" };
 
@@ -197,11 +203,11 @@ export async function sendInvoice(id: string) {
       to: client.email,
       subject: `Invoice ${invoice.number} from ${settings.businessName}`,
       html: `
-        <p>Hi ${client.name},</p>
-        <p>Please find attached invoice <strong>${invoice.number}</strong> for
+        <p>Hi ${escapeHtml(client.name)},</p>
+        <p>Please find attached invoice <strong>${escapeHtml(invoice.number)}</strong> for
         ${amountLabel}, due ${formatDate(invoice.dueDate)}.</p>
         <p>You can also view it online: <a href="${link}">${link}</a></p>
-        <p>Thanks,<br/>${settings.businessName}</p>
+        <p>Thanks,<br/>${escapeHtml(settings.businessName)}</p>
       `,
       attachments: [
         { filename: `${invoice.number}.pdf`, content: pdfBuffer, url: `${link}/pdf` },
@@ -234,6 +240,7 @@ export async function sendInvoice(id: string) {
 }
 
 export async function markInvoicePaid(id: string) {
+  await requireSession();
   const invoice = db.select().from(invoices).where(eq(invoices.id, id)).get();
   if (!invoice) return;
 
@@ -258,6 +265,7 @@ export async function markInvoicePaid(id: string) {
 }
 
 export async function cancelInvoice(id: string, _prev: unknown, _formData: FormData) {
+  await requireSession();
   const invoice = db.select().from(invoices).where(eq(invoices.id, id)).get();
   if (!invoice) return { error: "Invoice not found" };
   if (invoice.amountPaid > 0) {
@@ -277,6 +285,7 @@ export async function cancelInvoice(id: string, _prev: unknown, _formData: FormD
 }
 
 export async function reopenInvoice(id: string) {
+  await requireSession();
   db.update(invoices)
     .set({ status: "draft", sentAt: null, paidAt: null, updatedAt: new Date() })
     .where(eq(invoices.id, id))
@@ -292,6 +301,7 @@ const paymentSchema = z.object({
 });
 
 export async function recordPayment(invoiceId: string, _prev: unknown, formData: FormData) {
+  await requireSession();
   const parsed = paymentSchema.safeParse({
     amount: formData.get("amount"),
     paidAt: formData.get("paidAt"),
@@ -365,6 +375,7 @@ export async function recordPayment(invoiceId: string, _prev: unknown, formData:
 }
 
 export async function deletePayment(invoiceId: string, paymentId: string) {
+  await requireSession();
   const invoice = db.select().from(invoices).where(eq(invoices.id, invoiceId)).get();
   if (!invoice) return;
   const payment = db.select().from(payments).where(eq(payments.id, paymentId)).get();

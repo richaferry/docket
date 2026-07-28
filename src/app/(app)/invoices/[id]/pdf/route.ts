@@ -3,8 +3,10 @@ import { db } from "@/db";
 import { invoices } from "@/db/schema";
 import { buildInvoicePdfData } from "@/lib/invoices";
 import { renderInvoicePdf } from "@/lib/pdf/invoice-document";
+import { requireSession } from "@/lib/auth";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  await requireSession();
   const { id } = await params;
   const invoice = db.select().from(invoices).where(eq(invoices.id, id)).get();
   if (!invoice) return new Response("Not found", { status: 404 });

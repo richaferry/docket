@@ -3,7 +3,8 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { getSettings, updateSettings } from "@/lib/settings";
-import { hashPassword, verifyPassword } from "@/lib/auth";
+import { hashPassword, verifyPassword, requireSession } from "@/lib/auth";
+import { CURRENCY_CODES } from "@/lib/currencies";
 import { sendMail, MailerNotConfiguredError, MailProviderError } from "@/lib/mailer";
 
 const businessSchema = z.object({
@@ -14,6 +15,7 @@ const businessSchema = z.object({
 });
 
 export async function updateBusinessProfile(_prev: unknown, formData: FormData) {
+  await requireSession();
   const parsed = businessSchema.safeParse({
     businessName: formData.get("businessName"),
     businessEmail: formData.get("businessEmail"),
@@ -30,7 +32,7 @@ export async function updateBusinessProfile(_prev: unknown, formData: FormData) 
 }
 
 const invoiceDefaultsSchema = z.object({
-  currency: z.string().min(1),
+  currency: z.enum(CURRENCY_CODES, { message: "Choose a valid currency" }),
   defaultPaymentTerms: z.string().min(1),
   taxLabel: z.string().min(1),
   defaultTaxRate: z.coerce.number().min(0),
@@ -41,6 +43,7 @@ const invoiceDefaultsSchema = z.object({
 });
 
 export async function updateInvoiceDefaults(_prev: unknown, formData: FormData) {
+  await requireSession();
   const parsed = invoiceDefaultsSchema.safeParse({
     currency: formData.get("currency"),
     defaultPaymentTerms: formData.get("defaultPaymentTerms"),
@@ -66,14 +69,17 @@ const smtpSchema = z.object({
   smtpPort: z.coerce.number().int().min(1),
   smtpSecure: z.coerce.boolean(),
   smtpUser: z.string().min(1, "SMTP username is required"),
-  smtpPass: z.string().min(1, "SMTP password is required"),
+  // Blank means "keep the existing password" — the field is never
+  // pre-filled with the real secret (see EmailSettingsForm), so a blank
+  // submission is the normal case, not a missing-value error.
+  smtpPass: z.string().optional(),
   fromName: z.string().optional(),
   fromEmail: z.string().email("Enter a valid sender email"),
 });
 
 const mailanvilSchema = z.object({
   emailProvider: z.literal("mailanvil"),
-  mailanvilApiKey: z.string().min(1, "API key is required"),
+  mailanvilApiKey: z.string().optional(),
   fromName: z.string().optional(),
   fromEmail: z.string().email("Enter a valid sender email"),
 });
@@ -81,6 +87,7 @@ const mailanvilSchema = z.object({
 const emailSettingsSchema = z.discriminatedUnion("emailProvider", [smtpSchema, mailanvilSchema]);
 
 export async function updateEmailSettings(_prev: unknown, formData: FormData) {
+  await requireSession();
   const emailProvider = formData.get("emailProvider") === "mailanvil" ? "mailanvil" : "smtp";
 
   const parsed = emailSettingsSchema.safeParse({
@@ -89,8 +96,8 @@ export async function updateEmailSettings(_prev: unknown, formData: FormData) {
     smtpPort: formData.get("smtpPort"),
     smtpSecure: formData.get("smtpSecure") === "on",
     smtpUser: formData.get("smtpUser"),
-    smtpPass: formData.get("smtpPass"),
-    mailanvilApiKey: formData.get("mailanvilApiKey"),
+    smtpPass: formData.get("smtpPass") || undefined,
+    mailanvilApiKey: formData.get("mailanvilApiKey") || undefined,
     fromName: formData.get("fromName") || undefined,
     fromEmail: formData.get("fromEmail"),
   });
@@ -98,14 +105,33 @@ export async function updateEmailSettings(_prev: unknown, formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  updateSettings(parsed.data);
+  const current = getSettings();
+
+  if (parsed.data.emailProvider === "smtp") {
+    const smtpPass = parsed.data.smtpPass || current.smtpPass;
+    if (!smtpPass) return { error: "SMTP password is required." };
+    updateSettings({ ...parsed.data, smtpPass });
+  } else {
+    const mailanvilApiKey = parsed.data.mailanvilApiKey || current.mailanvilApiKey;
+    if (!mailanvilApiKey) return { error: "API key is required." };
+    updateSettings({ ...parsed.data, mailanvilApiKey });
+  }
+
   revalidatePath("/settings");
   return { error: null, success: true };
 }
 
+const testEmailSchema = z.object({
+  testEmailTo: z.string().email("Enter a valid email address."),
+});
+
 export async function sendTestEmail(_prev: unknown, formData: FormData) {
-  const to = formData.get("testEmailTo") as string;
-  if (!to) return { error: "Enter an email address to send the test to." };
+  await requireSession();
+  const parsed = testEmailSchema.safeParse({ testEmailTo: formData.get("testEmailTo") });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const to = parsed.data.testEmailTo;
 
   const settings = getSettings();
   try {
@@ -131,6 +157,7 @@ const passwordSchema = z
   });
 
 export async function changePassword(_prev: unknown, formData: FormData) {
+  await requireSession();
   const parsed = passwordSchema.safeParse({
     currentPassword: formData.get("currentPassword"),
     newPassword: formData.get("newPassword"),

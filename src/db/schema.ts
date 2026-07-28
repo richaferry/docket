@@ -106,6 +106,8 @@ export const settings = sqliteTable("settings", {
   authSecret: text("auth_secret").notNull(),
   adminEmail: text("admin_email"),
   adminPasswordHash: text("admin_password_hash"),
+  failedLoginAttempts: integer("failed_login_attempts").notNull().default(0),
+  loginLockedUntil: integer("login_locked_until", { mode: "timestamp_ms" }),
 
   businessName: text("business_name").notNull().default(""),
   businessEmail: text("business_email").notNull().default(""),

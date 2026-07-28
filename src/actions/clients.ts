@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { clients, activities } from "@/db/schema";
+import { requireSession } from "@/lib/auth";
 
 const clientSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -31,6 +32,7 @@ function parseClientForm(formData: FormData) {
 }
 
 export async function createClient(_prev: unknown, formData: FormData) {
+  await requireSession();
   const parsed = parseClientForm(formData);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -50,6 +52,7 @@ export async function createClient(_prev: unknown, formData: FormData) {
 }
 
 export async function updateClient(id: string, _prev: unknown, formData: FormData) {
+  await requireSession();
   const parsed = parseClientForm(formData);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -85,6 +88,7 @@ const activitySchema = z.object({
 });
 
 export async function addActivity(clientId: string, _prev: unknown, formData: FormData) {
+  await requireSession();
   const parsed = activitySchema.safeParse({
     type: formData.get("type"),
     content: formData.get("content"),
@@ -102,6 +106,7 @@ export async function addActivity(clientId: string, _prev: unknown, formData: Fo
 }
 
 export async function deleteClient(id: string) {
+  await requireSession();
   try {
     db.delete(clients).where(eq(clients.id, id)).run();
   } catch {

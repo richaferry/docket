@@ -25,3 +25,9 @@ export const CURRENCIES = [
   { code: "INR", label: "INR — Indian Rupee" },
   { code: "CHF", label: "CHF — Swiss Franc" },
 ] as const;
+
+// Server-side validation must reject anything outside this list — the UI
+// only offers a <select>, but a direct POST could otherwise store an
+// invalid ISO code that later crashes every formatMoney() call for that
+// row (Intl.NumberFormat throws on an unrecognized currency).
+export const CURRENCY_CODES = CURRENCIES.map((c) => c.code) as [string, ...string[]];
