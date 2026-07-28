@@ -21,6 +21,16 @@ export function formatDate(date: Date | number) {
   }).format(date);
 }
 
+export function formatDateTime(date: Date | number) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export function todayISO(): string {
   return new Date().toISOString();
 }

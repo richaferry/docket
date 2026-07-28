@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { LinkButton } from "@/components/ui/button";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Badge, CLIENT_STATUS_TONE, INVOICE_STATUS_TONE } from "@/components/ui/badge";
-import { formatDate, formatMoney } from "@/lib/utils";
+import { formatDate, formatDateTime, formatMoney } from "@/lib/utils";
 import { getDisplayStatus } from "@/lib/invoices";
 import { ActivityForm } from "./activity-form";
 
@@ -77,7 +77,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
                         <Icon size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-ink-muted" />
                         <div className="min-w-0">
                           <p className="text-sm text-ink">{entry.content}</p>
-                          <p className="text-xs text-ink-muted">{formatDate(entry.createdAt)}</p>
+                          <p className="text-xs text-ink-muted">{formatDateTime(entry.createdAt)}</p>
                         </div>
                       </li>
                     );

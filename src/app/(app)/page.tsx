@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { LinkButton } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
 import { Badge, INVOICE_STATUS_TONE } from "@/components/ui/badge";
-import { formatDate, formatMoney, cn } from "@/lib/utils";
+import { formatDate, formatDateTime, formatMoney, cn } from "@/lib/utils";
 import { getDisplayStatus } from "@/lib/invoices";
 import { StickyNote, Phone, Mail, Users2, ArrowRightLeft, Send, CheckCircle2 } from "lucide-react";
 
@@ -147,7 +147,7 @@ export default function DashboardPage() {
                     <div className="min-w-0">
                       <p className="truncate text-sm text-ink">{entry.content}</p>
                       <p className="text-xs text-ink-muted">
-                        {client?.name ?? "—"} · {formatDate(entry.createdAt)}
+                        {client?.name ?? "—"} · {formatDateTime(entry.createdAt)}
                       </p>
                     </div>
                   </li>
