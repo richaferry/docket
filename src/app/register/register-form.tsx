@@ -15,7 +15,7 @@ export function RegisterForm() {
         <CardBody>
           <p className="text-sm leading-relaxed text-ink">
             Almost there! We sent a verification link to your email. Click it to
-            confirm your address and finish setting up your workspace.
+            confirm your address, then you&apos;ll create your workspace.
           </p>
         </CardBody>
       </Card>
@@ -26,15 +26,6 @@ export function RegisterForm() {
     <Card>
       <CardBody>
         <form action={formAction} className="flex flex-col gap-4">
-          <Field label="Business name" htmlFor="businessName">
-            <Input
-              id="businessName"
-              name="businessName"
-              placeholder="Acme Studio"
-              required
-              autoFocus
-            />
-          </Field>
           <Field label="Work email" htmlFor="email">
             <Input
               id="email"
@@ -42,6 +33,7 @@ export function RegisterForm() {
               type="email"
               placeholder="you@studio.com"
               required
+              autoFocus
             />
           </Field>
           <Field label="Password" htmlFor="password" hint="At least 8 characters.">

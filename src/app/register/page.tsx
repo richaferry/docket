@@ -1,17 +1,13 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { isOnboarded } from "@/lib/settings";
 import { isSignupDisabled } from "@/lib/env";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { RegisterForm } from "./register-form";
 
-// Reads onboarding state + session cookies; must render per-request.
+// Reads the session cookie; must render per-request.
 export const dynamic = "force-dynamic";
 
 export default async function RegisterPage() {
-  if (!(await isOnboarded())) {
-    redirect("/setup");
-  }
   if (isSignupDisabled()) {
     redirect("/login");
   }
@@ -27,7 +23,7 @@ export default async function RegisterPage() {
         <div className="mb-8 flex items-center justify-between">
           <div className="text-left">
             <p className="font-display text-2xl text-ink">Docket</p>
-            <p className="mt-1 text-sm text-ink-muted">Create your workspace.</p>
+            <p className="mt-1 text-sm text-ink-muted">Create your account.</p>
           </div>
           <ThemeToggle />
         </div>

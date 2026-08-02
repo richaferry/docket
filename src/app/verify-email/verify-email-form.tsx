@@ -14,8 +14,8 @@ export function VerifyEmailForm({ token }: { token: string }) {
         <form action={formAction} className="flex flex-col gap-4">
           <input type="hidden" name="token" value={token} />
           <p className="text-sm leading-relaxed text-ink">
-            Click the button to verify this email address and finish setting up
-            your workspace.
+            Click the button to verify this email address. You&apos;ll be signed
+            in automatically to finish setting up your workspace.
           </p>
           {state?.error && (
             <p role="alert" className="text-sm text-danger">

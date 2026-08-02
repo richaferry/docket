@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { getSession, requireSession } from "@/lib/auth";
-import { isOnboarded, getSettings } from "@/lib/settings";
+import { requireSession } from "@/lib/auth";
+import { isTenantOnboarded, getSettings } from "@/lib/settings";
 import { getThemePref } from "@/lib/theme";
 import { Sidebar } from "@/components/nav/sidebar";
 
@@ -11,16 +11,14 @@ import { Sidebar } from "@/components/nav/sidebar";
 export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  if (!(await isOnboarded())) {
+  const { tenantId } = await requireSession();
+
+  // A signed-in user who hasn't created a workspace yet gets bounced to the
+  // workspace step before the dashboard can open.
+  if (!(await isTenantOnboarded(tenantId))) {
     redirect("/setup");
   }
 
-  const session = await getSession();
-  if (!session) {
-    redirect("/login");
-  }
-
-  const { tenantId } = await requireSession();
   const settings = await getSettings(tenantId);
   const initialPref = await getThemePref();
 

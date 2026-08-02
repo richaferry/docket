@@ -1,15 +1,18 @@
 import { redirect } from "next/navigation";
-import { isOnboarded } from "@/lib/settings";
+import { requireSession } from "@/lib/auth";
+import { isTenantOnboarded } from "@/lib/settings";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SetupForm } from "./setup-form";
 
-// Reads onboarding state from the database; must render per-request, not be
-// prerendered at build time.
+// Reads the session + onboarding state from the database; must render
+// per-request, not be prerendered at build time.
 export const dynamic = "force-dynamic";
 
 export default async function SetupPage() {
-  if (await isOnboarded()) {
-    redirect("/login");
+  const session = await requireSession();
+
+  if (await isTenantOnboarded(session.tenantId)) {
+    redirect("/app");
   }
 
   return (
