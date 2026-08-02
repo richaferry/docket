@@ -21,11 +21,7 @@ import { sendMail, MailerNotConfiguredError, MailProviderError } from "@/lib/mai
 function makeSettings(overrides: Partial<Settings> = {}): Settings {
   return {
     id: 1,
-    authSecret: "secret",
-    adminEmail: "admin@example.com",
-    adminPasswordHash: "hash",
-    failedLoginAttempts: 0,
-    loginLockedUntil: null,
+    tenantId: "mt-test",
     businessName: "Acme Co",
     businessEmail: "hello@acme.test",
     businessAddress: "",
@@ -82,7 +78,7 @@ describe("sendMail", () => {
   describe("routing", () => {
     it("routes to SMTP when emailProvider is smtp", async () => {
       vi.mocked(getSettings).mockResolvedValue(makeSettings({ emailProvider: "smtp" }));
-      await sendMail(baseOptions);
+      await sendMail("mt-test", baseOptions);
       expect(nodemailer.createTransport).toHaveBeenCalledTimes(1);
       expect(fetch).not.toHaveBeenCalled();
     });
@@ -92,7 +88,7 @@ describe("sendMail", () => {
         makeSettings({ emailProvider: "mailanvil", mailanvilApiKey: "key_123" }),
       );
       vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 200 }));
-      await sendMail(baseOptions);
+      await sendMail("mt-test", baseOptions);
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(nodemailer.createTransport).not.toHaveBeenCalled();
     });
@@ -101,22 +97,22 @@ describe("sendMail", () => {
   describe("SMTP transport", () => {
     it("throws MailerNotConfiguredError when smtpHost is missing", async () => {
       vi.mocked(getSettings).mockResolvedValue(makeSettings({ smtpHost: null }));
-      await expect(sendMail(baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
+      await expect(sendMail("mt-test", baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
     });
 
     it("throws MailerNotConfiguredError when smtpUser is missing", async () => {
       vi.mocked(getSettings).mockResolvedValue(makeSettings({ smtpUser: null }));
-      await expect(sendMail(baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
+      await expect(sendMail("mt-test", baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
     });
 
     it("throws MailerNotConfiguredError when smtpPass is missing", async () => {
       vi.mocked(getSettings).mockResolvedValue(makeSettings({ smtpPass: null }));
-      await expect(sendMail(baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
+      await expect(sendMail("mt-test", baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
     });
 
     it("throws MailerNotConfiguredError when fromEmail is missing", async () => {
       vi.mocked(getSettings).mockResolvedValue(makeSettings({ fromEmail: null }));
-      await expect(sendMail(baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
+      await expect(sendMail("mt-test", baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
     });
 
     it("creates a transporter with the configured host/port/secure/auth and sends the message", async () => {
@@ -132,7 +128,7 @@ describe("sendMail", () => {
       vi.mocked(getSettings).mockResolvedValue(settings);
 
       const attachments = [{ filename: "invoice.pdf", content: Buffer.from("pdf-bytes") }];
-      await sendMail({ ...baseOptions, attachments });
+      await sendMail("mt-test", { ...baseOptions, attachments });
 
       expect(nodemailer.createTransport).toHaveBeenCalledWith({
         host: "smtp.acme.test",
@@ -153,7 +149,7 @@ describe("sendMail", () => {
 
     it("defaults the SMTP port to 587 when smtpPort is not set", async () => {
       vi.mocked(getSettings).mockResolvedValue(makeSettings({ smtpPort: null }));
-      await sendMail(baseOptions);
+      await sendMail("mt-test", baseOptions);
       expect(nodemailer.createTransport).toHaveBeenCalledWith(
         expect.objectContaining({ port: 587 }),
       );
@@ -163,7 +159,7 @@ describe("sendMail", () => {
       vi.mocked(getSettings).mockResolvedValue(
         makeSettings({ fromName: null, businessName: "Acme Co", fromEmail: "billing@acme.test" }),
       );
-      await sendMail(baseOptions);
+      await sendMail("mt-test", baseOptions);
       const transporter = vi.mocked(nodemailer.createTransport).mock.results[0].value;
       expect(transporter.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({ from: "Acme Co <billing@acme.test>" }),
@@ -185,13 +181,13 @@ describe("sendMail", () => {
 
     it("throws MailerNotConfiguredError when mailanvilApiKey is missing", async () => {
       vi.mocked(getSettings).mockResolvedValue(mailanvilSettings({ mailanvilApiKey: null }));
-      await expect(sendMail(baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
+      await expect(sendMail("mt-test", baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
       expect(fetch).not.toHaveBeenCalled();
     });
 
     it("throws MailerNotConfiguredError when fromEmail is missing", async () => {
       vi.mocked(getSettings).mockResolvedValue(mailanvilSettings({ fromEmail: null }));
-      await expect(sendMail(baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
+      await expect(sendMail("mt-test", baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
       expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -202,7 +198,7 @@ describe("sendMail", () => {
       const attachments = [
         { filename: "invoice.pdf", content: Buffer.from("ignored"), url: "https://example.test/i/abc/pdf" },
       ];
-      await sendMail({ ...baseOptions, attachments });
+      await sendMail("mt-test", { ...baseOptions, attachments });
 
       expect(fetch).toHaveBeenCalledWith(
         "https://api.mailanvil.com/v1/send",
@@ -234,7 +230,7 @@ describe("sendMail", () => {
       vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 200 }));
 
       const content = Buffer.from("pdf-bytes");
-      await sendMail({ ...baseOptions, attachments: [{ filename: "invoice.pdf", content }] });
+      await sendMail("mt-test", { ...baseOptions, attachments: [{ filename: "invoice.pdf", content }] });
 
       const [, init] = vi.mocked(fetch).mock.calls[0];
       const body = JSON.parse(init!.body as string);
@@ -247,7 +243,7 @@ describe("sendMail", () => {
       vi.mocked(getSettings).mockResolvedValue(mailanvilSettings());
       vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 200 }));
 
-      await sendMail(baseOptions);
+      await sendMail("mt-test", baseOptions);
 
       const [, init] = vi.mocked(fetch).mock.calls[0];
       const body = JSON.parse(init!.body as string);
@@ -258,7 +254,7 @@ describe("sendMail", () => {
       vi.mocked(getSettings).mockResolvedValue(mailanvilSettings({ fromName: null, businessName: "Acme Co" }));
       vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 200 }));
 
-      await sendMail(baseOptions);
+      await sendMail("mt-test", baseOptions);
 
       const [, init] = vi.mocked(fetch).mock.calls[0];
       const body = JSON.parse(init!.body as string);
@@ -271,7 +267,7 @@ describe("sendMail", () => {
         new Response(JSON.stringify({ error: { message: "Invalid email" } }), { status: 422 }),
       );
 
-      const error = await sendMail(baseOptions).catch((e: unknown) => e);
+      const error = await sendMail("mt-test", baseOptions).catch((e: unknown) => e);
       expect(error).toBeInstanceOf(MailProviderError);
       expect((error as Error).message).toBe("Invalid email");
     });
@@ -280,14 +276,14 @@ describe("sendMail", () => {
       vi.mocked(getSettings).mockResolvedValue(mailanvilSettings());
       vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({}), { status: 500 }));
 
-      await expect(sendMail(baseOptions)).rejects.toThrow("MailAnvil request failed (500)");
+      await expect(sendMail("mt-test", baseOptions)).rejects.toThrow("MailAnvil request failed (500)");
     });
 
     it("falls back to a generic message when the error body isn't valid JSON", async () => {
       vi.mocked(getSettings).mockResolvedValue(mailanvilSettings());
       vi.mocked(fetch).mockResolvedValue(new Response("not json", { status: 503 }));
 
-      await expect(sendMail(baseOptions)).rejects.toThrow("MailAnvil request failed (503)");
+      await expect(sendMail("mt-test", baseOptions)).rejects.toThrow("MailAnvil request failed (503)");
     });
   });
 });

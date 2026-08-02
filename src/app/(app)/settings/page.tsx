@@ -1,4 +1,5 @@
 import { getSettings } from "@/lib/settings";
+import { requireSession } from "@/lib/auth";
 import { getPublicUrl } from "@/lib/env";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
@@ -10,7 +11,8 @@ import {
 } from "./forms";
 
 export default async function SettingsPage() {
-  const settings = await getSettings();
+  const { tenantId } = await requireSession();
+  const settings = await getSettings(tenantId);
   const publicUrl = getPublicUrl();
 
   return (

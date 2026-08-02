@@ -1,7 +1,8 @@
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
 import { invoices, clients } from "@/db/schema";
+import { requireSession } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { LinkButton } from "@/components/ui/button";
 import { Badge, INVOICE_STATUS_TONE } from "@/components/ui/badge";
@@ -26,9 +27,17 @@ export default async function InvoicesPage({
 }) {
   const { status } = await searchParams;
   const active = (status as DisplayStatus | undefined) ?? "all";
+  const { tenantId } = await requireSession();
 
-  const allInvoices = await db.select().from(invoices).orderBy(desc(invoices.issueDate));
-  const allClients = await db.select().from(clients);
+  const allInvoices = await db
+    .select()
+    .from(invoices)
+    .where(eq(invoices.tenantId, tenantId))
+    .orderBy(desc(invoices.issueDate));
+  const allClients = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.tenantId, tenantId));
   const clientById = new Map(allClients.map((c) => [c.id, c]));
 
   const filtered = allInvoices.filter((invoice) => {

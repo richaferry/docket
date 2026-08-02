@@ -1,7 +1,8 @@
-import { eq, asc, desc } from "drizzle-orm";
+import { and, eq, asc, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { invoices, invoiceItems, clients } from "@/db/schema";
+import { requireSession } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { updateInvoice } from "@/actions/invoices";
 import { InvoiceForm } from "../../invoice-form";
@@ -9,16 +10,27 @@ import { DeleteInvoiceButton } from "./delete-button";
 
 export default async function EditInvoicePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const invoice = (await db.select().from(invoices).where(eq(invoices.id, id)).limit(1))[0];
+  const { tenantId } = await requireSession();
+  const invoice = (
+    await db
+      .select()
+      .from(invoices)
+      .where(and(eq(invoices.id, id), eq(invoices.tenantId, tenantId)))
+      .limit(1)
+  )[0];
   if (!invoice) notFound();
 
   const items = await db
     .select()
     .from(invoiceItems)
-    .where(eq(invoiceItems.invoiceId, id))
+    .where(and(eq(invoiceItems.invoiceId, id), eq(invoiceItems.tenantId, tenantId)))
     .orderBy(asc(invoiceItems.sortOrder));
 
-  const allClients = await db.select().from(clients).orderBy(desc(clients.createdAt));
+  const allClients = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.tenantId, tenantId))
+    .orderBy(desc(clients.createdAt));
   const action = updateInvoice.bind(null, invoice.id);
 
   return (

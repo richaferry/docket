@@ -1,7 +1,10 @@
 "use server";
 
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { db } from "@/db";
+import { tenants } from "@/db/schema";
 import { getSettings, updateSettings } from "@/lib/settings";
 import { hashPassword, verifyPassword, requireSession } from "@/lib/auth";
 import { CURRENCY_CODES } from "@/lib/currencies";
@@ -15,7 +18,7 @@ const businessSchema = z.object({
 });
 
 export async function updateBusinessProfile(_prev: unknown, formData: FormData) {
-  await requireSession();
+  const { tenantId } = await requireSession();
   const parsed = businessSchema.safeParse({
     businessName: formData.get("businessName"),
     businessEmail: formData.get("businessEmail"),
@@ -26,7 +29,7 @@ export async function updateBusinessProfile(_prev: unknown, formData: FormData) 
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  await updateSettings(parsed.data);
+  await updateSettings(tenantId, parsed.data);
   revalidatePath("/settings");
   return { error: null, success: true };
 }
@@ -43,7 +46,7 @@ const invoiceDefaultsSchema = z.object({
 });
 
 export async function updateInvoiceDefaults(_prev: unknown, formData: FormData) {
-  await requireSession();
+  const { tenantId } = await requireSession();
   const parsed = invoiceDefaultsSchema.safeParse({
     currency: formData.get("currency"),
     defaultPaymentTerms: formData.get("defaultPaymentTerms"),
@@ -58,7 +61,7 @@ export async function updateInvoiceDefaults(_prev: unknown, formData: FormData) 
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  await updateSettings(parsed.data);
+  await updateSettings(tenantId, parsed.data);
   revalidatePath("/settings");
   return { error: null, success: true };
 }
@@ -87,7 +90,7 @@ const mailanvilSchema = z.object({
 const emailSettingsSchema = z.discriminatedUnion("emailProvider", [smtpSchema, mailanvilSchema]);
 
 export async function updateEmailSettings(_prev: unknown, formData: FormData) {
-  await requireSession();
+  const { tenantId } = await requireSession();
   const emailProvider = formData.get("emailProvider") === "mailanvil" ? "mailanvil" : "smtp";
 
   const parsed = emailSettingsSchema.safeParse({
@@ -105,16 +108,16 @@ export async function updateEmailSettings(_prev: unknown, formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const current = await getSettings();
+  const current = await getSettings(tenantId);
 
   if (parsed.data.emailProvider === "smtp") {
     const smtpPass = parsed.data.smtpPass || current.smtpPass;
     if (!smtpPass) return { error: "SMTP password is required." };
-    await updateSettings({ ...parsed.data, smtpPass });
+    await updateSettings(tenantId, { ...parsed.data, smtpPass });
   } else {
     const mailanvilApiKey = parsed.data.mailanvilApiKey || current.mailanvilApiKey;
     if (!mailanvilApiKey) return { error: "API key is required." };
-    await updateSettings({ ...parsed.data, mailanvilApiKey });
+    await updateSettings(tenantId, { ...parsed.data, mailanvilApiKey });
   }
 
   revalidatePath("/settings");
@@ -126,16 +129,16 @@ const testEmailSchema = z.object({
 });
 
 export async function sendTestEmail(_prev: unknown, formData: FormData) {
-  await requireSession();
+  const { tenantId } = await requireSession();
   const parsed = testEmailSchema.safeParse({ testEmailTo: formData.get("testEmailTo") });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
   const to = parsed.data.testEmailTo;
 
-  const settings = await getSettings();
+  const settings = await getSettings(tenantId);
   try {
-    await sendMail({
+    await sendMail(tenantId, {
       to,
       subject: `Test email from ${settings.businessName || "Docket"}`,
       html: `<p>This is a test email from your Docket workspace. If you got this, sending is working.</p>`,
@@ -157,7 +160,7 @@ const passwordSchema = z
   });
 
 export async function changePassword(_prev: unknown, formData: FormData) {
-  await requireSession();
+  const { tenantId } = await requireSession();
   const parsed = passwordSchema.safeParse({
     currentPassword: formData.get("currentPassword"),
     newPassword: formData.get("newPassword"),
@@ -166,11 +169,16 @@ export async function changePassword(_prev: unknown, formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const settings = await getSettings();
-  if (!settings.adminPasswordHash || !verifyPassword(parsed.data.currentPassword, settings.adminPasswordHash)) {
+  const tenant = (
+    await db.select().from(tenants).where(eq(tenants.id, tenantId)).limit(1)
+  )[0];
+  if (!tenant?.adminPasswordHash || !verifyPassword(parsed.data.currentPassword, tenant.adminPasswordHash)) {
     return { error: "Current password is incorrect." };
   }
 
-  await updateSettings({ adminPasswordHash: hashPassword(parsed.data.newPassword) });
+  await db
+    .update(tenants)
+    .set({ adminPasswordHash: hashPassword(parsed.data.newPassword) })
+    .where(eq(tenants.id, tenantId));
   return { error: null, success: true };
 }

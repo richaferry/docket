@@ -1,49 +1,63 @@
-import { randomBytes } from "node:crypto";
 import { db } from "@/db";
-import { settings } from "@/db/schema";
+import { settings, tenants } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export type Settings = typeof settings.$inferSelect;
 
-let cached: Settings | null = null;
+const cache = new Map<string, Settings>();
 
-export async function getSettings(): Promise<Settings> {
+export async function getSettings(tenantId: string): Promise<Settings> {
+  const cached = cache.get(tenantId);
   if (cached) return cached;
 
-  const existing = await db.select().from(settings).where(eq(settings.id, 1)).limit(1);
+  const existing = await db
+    .select()
+    .from(settings)
+    .where(eq(settings.tenantId, tenantId))
+    .limit(1);
   const row = existing[0];
   if (row) {
-    cached = row;
+    cache.set(tenantId, row);
     return row;
   }
 
-  const authSecret = randomBytes(32).toString("hex");
-  // Build-time prerendering runs several pages concurrently across workers;
-  // each may find no row and race to insert. onConflictDoNothing keeps the
-  // losers from crashing — they just re-select the winner's row.
+  // A tenant is created (setup/register) without a settings row; the first
+  // read backfills one. onConflictDoNothing keeps concurrent first-reads from
+  // racing — the losers just re-select the winner's row.
   await db
     .insert(settings)
-    .values({ id: 1, authSecret })
+    .values({ tenantId })
     .onConflictDoNothing();
-  const created = await db.select().from(settings).where(eq(settings.id, 1)).limit(1);
-  cached = created[0]!;
-  return cached;
+  const created = await db
+    .select()
+    .from(settings)
+    .where(eq(settings.tenantId, tenantId))
+    .limit(1);
+  const fresh = created[0]!;
+  cache.set(tenantId, fresh);
+  return fresh;
 }
 
 export async function updateSettings(
-  patch: Partial<Omit<Settings, "id" | "authSecret">>,
+  tenantId: string,
+  patch: Partial<Omit<Settings, "id" | "tenantId">>,
 ): Promise<Settings> {
-  await getSettings();
-  await db.update(settings).set(patch).where(eq(settings.id, 1));
-  cached = null;
-  return getSettings();
+  await getSettings(tenantId);
+  await db.update(settings).set(patch).where(eq(settings.tenantId, tenantId));
+  cache.delete(tenantId);
+  return getSettings(tenantId);
 }
 
-export function invalidateSettingsCache() {
-  cached = null;
+export function invalidateSettingsCache(tenantId?: string) {
+  if (tenantId) {
+    cache.delete(tenantId);
+  } else {
+    cache.clear();
+  }
 }
 
+// Onboarding has happened once at least one tenant exists.
 export async function isOnboarded(): Promise<boolean> {
-  const s = await getSettings();
-  return Boolean(s.adminEmail && s.adminPasswordHash);
+  const rows = await db.select({ id: tenants.id }).from(tenants).limit(1);
+  return rows.length > 0;
 }

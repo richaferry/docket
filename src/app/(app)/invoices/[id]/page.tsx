@@ -1,8 +1,9 @@
-import { eq, asc, desc } from "drizzle-orm";
+import { and, eq, asc, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
 import { invoices, invoiceItems, clients, payments } from "@/db/schema";
+import { requireSession } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Badge, INVOICE_STATUS_TONE } from "@/components/ui/badge";
@@ -14,19 +15,32 @@ import { PaymentForm, PaymentList } from "./payment-form";
 
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const invoice = (await db.select().from(invoices).where(eq(invoices.id, id)).limit(1))[0];
+  const { tenantId } = await requireSession();
+  const invoice = (
+    await db
+      .select()
+      .from(invoices)
+      .where(and(eq(invoices.id, id), eq(invoices.tenantId, tenantId)))
+      .limit(1)
+  )[0];
   if (!invoice) notFound();
 
-  const client = (await db.select().from(clients).where(eq(clients.id, invoice.clientId)).limit(1))[0];
+  const client = (
+    await db
+      .select()
+      .from(clients)
+      .where(and(eq(clients.id, invoice.clientId), eq(clients.tenantId, tenantId)))
+      .limit(1)
+  )[0];
   const items = await db
     .select()
     .from(invoiceItems)
-    .where(eq(invoiceItems.invoiceId, id))
+    .where(and(eq(invoiceItems.invoiceId, id), eq(invoiceItems.tenantId, tenantId)))
     .orderBy(asc(invoiceItems.sortOrder));
   const invoicePayments = await db
     .select()
     .from(payments)
-    .where(eq(payments.invoiceId, id))
+    .where(and(eq(payments.invoiceId, id), eq(payments.tenantId, tenantId)))
     .orderBy(desc(payments.paidAt));
 
   const displayStatus = getDisplayStatus(invoice);

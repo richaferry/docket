@@ -19,10 +19,10 @@ export function calcTotals(items: InvoiceItemInput[], taxRate: number, discount:
   return { subtotal, taxAmount, total };
 }
 
-export async function reserveInvoiceNumber(): Promise<string> {
-  const settings = await getSettings();
+export async function reserveInvoiceNumber(tenantId: string): Promise<string> {
+  const settings = await getSettings(tenantId);
   const number = `${settings.invoicePrefix}${String(settings.nextInvoiceNumber).padStart(4, "0")}`;
-  await updateSettings({ nextInvoiceNumber: settings.nextInvoiceNumber + 1 });
+  await updateSettings(tenantId, { nextInvoiceNumber: settings.nextInvoiceNumber + 1 });
   return number;
 }
 
@@ -68,7 +68,7 @@ export async function buildInvoicePdfData(invoiceId: string): Promise<InvoicePdf
     .where(eq(invoiceItems.invoiceId, invoiceId))
     .orderBy(asc(invoiceItems.sortOrder));
 
-  const settings = await getSettings();
+  const settings = await getSettings(invoice.tenantId);
 
   return {
     number: invoice.number,
