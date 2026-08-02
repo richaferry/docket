@@ -42,6 +42,21 @@ const migrationsFolder = path.join(process.cwd(), "drizzle");
 // CREATE the same table — the loser fails with "table already exists". The
 // winner's transaction commits, so a short retry loop sees the updated state
 // and skips straight past. This only retries genuine concurrency conflicts.
+//
+// The conflict signal can live on the thrown error OR its nested `cause`
+// chain: Drizzle wraps the SqliteError (whose message says "table already
+// exists") in a DrizzleError whose own message only repeats the SQL, so a
+// shallow check misses it.
+function isMigrationConflict(err: unknown): boolean {
+  const parts: string[] = [];
+  let current = err;
+  while (current instanceof Error) {
+    parts.push(current.message);
+    current = current.cause;
+  }
+  return /already exists|SQLITE_BUSY|database is locked|is locked/i.test(parts.join("\n"));
+}
+
 function runMigrations() {
   const maxAttempts = 10;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -49,9 +64,7 @@ function runMigrations() {
       migrate(db, { migrationsFolder });
       return;
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      const isConflict = /already exists|SQLITE_BUSY|database is locked|is locked/i.test(message);
-      if (!isConflict) throw err;
+      if (!isMigrationConflict(err)) throw err;
       const waitMs = 250 * attempt;
       const deadline = Date.now() + waitMs;
       while (Date.now() < deadline) {
