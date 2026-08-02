@@ -95,7 +95,7 @@ export function ThemeToggleMenu({
           role="menu"
           aria-label="Color theme options"
           className={cn(
-            "anim-pop absolute top-full z-50 mt-1.5 min-w-[9rem] rounded-xl border border-line bg-paper-raised p-1 shadow-[0_16px_40px_-16px_rgba(22,48,63,0.4)]",
+            "anim-pop absolute top-full z-50 mt-1.5 min-w-[9rem] rounded-xl border border-line bg-paper-raised p-1 shadow-[0_16px_40px_-16px_rgba(27,42,33,0.4)]",
             menuAlign === "left" ? "left-0 origin-top-left" : "right-0 origin-top-right",
           )}
         >
