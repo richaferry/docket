@@ -36,6 +36,46 @@ Data lives in a local SQLite file at `data/app.db`, created and migrated
 automatically on startup — nothing to run by hand. It's gitignored; back it up
 however you like.
 
+## Running with Docker
+
+The project ships with Docker files for both production and local development.
+Requires [Docker](https://docs.docker.com/get-docker/) (or Docker Desktop).
+
+### Development (hot reload)
+
+```bash
+cp .env.example .env
+docker compose -f docker-compose.dev.yml up --build
+```
+
+Open [http://localhost:3000](http://localhost:3000). Your host source is
+mounted into the container, so edits hot-reload via `next dev`.
+
+### Production
+
+```bash
+cp .env.example .env   # then set PUBLIC_URL to your real URL
+docker compose up -d --build
+```
+
+### Where your data lives
+
+The SQLite database is stored in a Docker **named volume** (`docket-data`,
+mounted at `/app/data`), so it survives container restarts and rebuilds.
+
+Back it up and restore it like any other file:
+
+```bash
+# backup
+docker compose cp docket:/app/data/app.db ./app.db.backup
+
+# restore
+docker compose cp ./app.db.backup docket:/app/data/app.db
+```
+
+> For self-hosting, put a reverse proxy (Caddy, nginx, or Cloudflare Tunnel)
+> in front of the container for TLS — don't expose the port directly.
+
 ## Configuration
 
 Everything workspace-related (business profile, invoice defaults, email
@@ -63,7 +103,8 @@ telling you to configure it.
 
 Next.js (App Router) · TypeScript · Tailwind CSS v4 · Drizzle ORM + SQLite ·
 [`@react-pdf/renderer`](https://react-pdf.org/) · Nodemailer · Server Actions
-for all mutations.
+for all mutations. Containerised with Docker (`Dockerfile`, `Dockerfile.dev`,
+`docker-compose.yml`).
 
 ## Scripts
 
