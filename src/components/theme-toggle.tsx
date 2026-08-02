@@ -1,7 +1,7 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import { Sun, Moon, Monitor } from "lucide-react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Sun, Moon, Monitor, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ThemePref = "light" | "dark" | "system";
@@ -45,39 +45,82 @@ function apply(value: ThemePref) {
 
 export function ThemeToggle({
   className,
-  orientation = "horizontal",
+  menuAlign = "right",
 }: {
   className?: string;
-  orientation?: "horizontal" | "vertical";
+  menuAlign?: "left" | "right";
 }) {
   const pref = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const CurrentIcon = OPTIONS.find((option) => option.value === pref)?.icon ?? Monitor;
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(event: PointerEvent) {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
-    <div
-      role="group"
-      aria-label="Color theme"
-      className={cn(
-        "flex items-center gap-0.5 rounded-[var(--radius)] border border-line bg-paper p-0.5",
-        orientation === "vertical" && "flex-col",
-        className,
-      )}
-    >
-      {OPTIONS.map(({ value, label, icon: Icon }) => (
-        <button
-          key={value}
-          type="button"
-          aria-pressed={pref === value}
-          aria-label={`${label} theme`}
-          title={`${label} theme`}
-          onClick={() => apply(value)}
+    <div ref={rootRef} className={cn("relative", className)}>
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Switch color theme"
+        title="Switch color theme"
+        className="flex h-7 w-7 items-center justify-center rounded-[var(--radius)] border border-line bg-paper text-ink-muted transition-colors hover:text-ink"
+      >
+        <CurrentIcon size={14} strokeWidth={2} aria-hidden="true" />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          aria-label="Color theme options"
           className={cn(
-            "flex h-7 w-7 items-center justify-center rounded-[calc(var(--radius)-2px)] transition-colors",
-            pref === value ? "bg-accent-soft text-accent" : "text-ink-muted hover:text-ink",
+            "anim-pop absolute top-full z-50 mt-1.5 min-w-[9rem] rounded-xl border border-line bg-paper-raised p-1 shadow-[0_16px_40px_-16px_rgba(22,48,63,0.4)]",
+            menuAlign === "left" ? "left-0 origin-top-left" : "right-0 origin-top-right",
           )}
         >
-          <Icon size={14} strokeWidth={2} aria-hidden="true" />
-        </button>
-      ))}
+          {OPTIONS.map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              role="menuitemradio"
+              aria-checked={pref === value}
+              onClick={() => {
+                apply(value);
+                setOpen(false);
+              }}
+              className={cn(
+                "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors",
+                pref === value
+                  ? "bg-accent-soft text-accent"
+                  : "text-ink-muted hover:bg-neutral-soft hover:text-ink",
+              )}
+            >
+              <Icon size={14} strokeWidth={2} aria-hidden="true" />
+              <span className="flex-1 text-left">{label}</span>
+              {pref === value && <Check size={13} strokeWidth={2.5} aria-hidden="true" />}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

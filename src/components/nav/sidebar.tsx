@@ -196,7 +196,7 @@ export function Sidebar({ businessName }: { businessName: string }) {
               </button>
             </div>
             <NavLinks pathname={pathname} onNavigate={() => setOpen(false)} />
-            <ThemeToggle className="mb-2 self-start" />
+            <ThemeToggle menuAlign="left" className="mb-2 self-start" />
             <SignOutButton />
           </aside>
         </div>
@@ -234,7 +234,7 @@ export function Sidebar({ businessName }: { businessName: string }) {
         </div>
         <NavLinks pathname={pathname} collapsed={collapsed} />
         <div className={cn("mt-4 flex flex-col gap-2", collapsed && "items-center")}>
-          <ThemeToggle orientation={collapsed ? "vertical" : "horizontal"} />
+          <ThemeToggle menuAlign="left" />
           <SignOutButton collapsed={collapsed} />
         </div>
       </aside>
