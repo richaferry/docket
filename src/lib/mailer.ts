@@ -23,7 +23,7 @@ type SendMailOptions = {
 };
 
 export async function sendMail(options: SendMailOptions) {
-  const settings = getSettings();
+  const settings = await getSettings();
 
   if (settings.emailProvider === "mailanvil") {
     return sendViaMailAnvil(options, settings);

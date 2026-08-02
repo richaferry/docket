@@ -25,22 +25,20 @@ const ACTIVITY_ICON = {
 
 export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const client = db.select().from(clients).where(eq(clients.id, id)).get();
+  const client = (await db.select().from(clients).where(eq(clients.id, id)).limit(1))[0];
   if (!client) notFound();
 
-  const timeline = db
+  const timeline = await db
     .select()
     .from(activities)
     .where(eq(activities.clientId, id))
-    .orderBy(desc(activities.createdAt))
-    .all();
+    .orderBy(desc(activities.createdAt));
 
-  const clientInvoices = db
+  const clientInvoices = await db
     .select()
     .from(invoices)
     .where(eq(invoices.clientId, id))
-    .orderBy(desc(invoices.issueDate))
-    .all();
+    .orderBy(desc(invoices.issueDate));
 
   return (
     <div>

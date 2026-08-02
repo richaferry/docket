@@ -9,7 +9,7 @@ import { DeleteClientButton } from "./delete-button";
 
 export default async function EditClientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const client = db.select().from(clients).where(eq(clients.id, id)).get();
+  const client = (await db.select().from(clients).where(eq(clients.id, id)).limit(1))[0];
   if (!client) notFound();
 
   const action = updateClient.bind(null, client.id);

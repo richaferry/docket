@@ -22,8 +22,8 @@ export function verifyPassword(password: string, stored: string): boolean {
   return timingSafeEqual(derived, expected);
 }
 
-function getSecretKey() {
-  const { authSecret } = getSettings();
+async function getSecretKey() {
+  const { authSecret } = await getSettings();
   return new TextEncoder().encode(authSecret);
 }
 
@@ -32,7 +32,7 @@ export async function createSession(email: string) {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${SESSION_DURATION_SECONDS}s`)
-    .sign(getSecretKey());
+    .sign(await getSecretKey());
 
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
@@ -54,7 +54,7 @@ export async function getSession(): Promise<{ email: string } | null> {
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, getSecretKey());
+    const { payload } = await jwtVerify(token, await getSecretKey());
     return { email: payload.email as string };
   } catch {
     return null;

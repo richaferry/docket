@@ -12,7 +12,7 @@ const setupSchema = z.object({
 });
 
 export async function setupAccount(_prev: unknown, formData: FormData) {
-  if (isOnboarded()) {
+  if (await isOnboarded()) {
     redirect("/login");
   }
 
@@ -28,7 +28,7 @@ export async function setupAccount(_prev: unknown, formData: FormData) {
 
   const { businessName, adminEmail, password } = parsed.data;
 
-  updateSettings({
+  await updateSettings({
     businessName,
     businessEmail: adminEmail,
     adminEmail,
@@ -61,7 +61,7 @@ export async function login(_prev: unknown, formData: FormData) {
     return { error: "Enter a valid email and password." };
   }
 
-  const settings = getSettings();
+  const settings = await getSettings();
 
   if (settings.loginLockedUntil && settings.loginLockedUntil.getTime() > Date.now()) {
     const minutes = Math.ceil((settings.loginLockedUntil.getTime() - Date.now()) / 60000);
@@ -78,14 +78,14 @@ export async function login(_prev: unknown, formData: FormData) {
 
   if (!valid) {
     const attempts = settings.failedLoginAttempts + 1;
-    updateSettings({
+    await updateSettings({
       failedLoginAttempts: attempts,
       loginLockedUntil: attempts >= MAX_FAILED_ATTEMPTS ? new Date(Date.now() + LOCKOUT_MS) : null,
     });
     return { error: "Incorrect email or password." };
   }
 
-  updateSettings({ failedLoginAttempts: 0, loginLockedUntil: null });
+  await updateSettings({ failedLoginAttempts: 0, loginLockedUntil: null });
   await createSession(settings.adminEmail!);
   redirect("/");
 }

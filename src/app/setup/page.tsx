@@ -3,8 +3,12 @@ import { isOnboarded } from "@/lib/settings";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SetupForm } from "./setup-form";
 
-export default function SetupPage() {
-  if (isOnboarded()) {
+// Reads onboarding state from the database; must render per-request, not be
+// prerendered at build time.
+export const dynamic = "force-dynamic";
+
+export default async function SetupPage() {
+  if (await isOnboarded()) {
     redirect("/login");
   }
 

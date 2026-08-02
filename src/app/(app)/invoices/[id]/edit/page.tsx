@@ -9,17 +9,16 @@ import { DeleteInvoiceButton } from "./delete-button";
 
 export default async function EditInvoicePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const invoice = db.select().from(invoices).where(eq(invoices.id, id)).get();
+  const invoice = (await db.select().from(invoices).where(eq(invoices.id, id)).limit(1))[0];
   if (!invoice) notFound();
 
-  const items = db
+  const items = await db
     .select()
     .from(invoiceItems)
     .where(eq(invoiceItems.invoiceId, id))
-    .orderBy(asc(invoiceItems.sortOrder))
-    .all();
+    .orderBy(asc(invoiceItems.sortOrder));
 
-  const allClients = db.select().from(clients).orderBy(desc(clients.createdAt)).all();
+  const allClients = await db.select().from(clients).orderBy(desc(clients.createdAt));
   const action = updateInvoice.bind(null, invoice.id);
 
   return (

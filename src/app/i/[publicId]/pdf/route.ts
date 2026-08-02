@@ -9,10 +9,10 @@ export async function GET(
   { params }: { params: Promise<{ publicId: string }> },
 ) {
   const { publicId } = await params;
-  const invoice = db.select().from(invoices).where(eq(invoices.publicId, publicId)).get();
+  const invoice = (await db.select().from(invoices).where(eq(invoices.publicId, publicId)).limit(1))[0];
   if (!invoice) return new Response("Not found", { status: 404 });
 
-  const data = buildInvoicePdfData(invoice.id);
+  const data = await buildInvoicePdfData(invoice.id);
   const buffer = await renderInvoicePdf(data);
 
   return new Response(new Uint8Array(buffer), {

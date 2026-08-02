@@ -31,16 +31,15 @@ const ACTIVITY_ICON = {
   payment_received: Banknote,
 };
 
-export default function DashboardPage() {
-  const settings = getSettings();
-  const allInvoices = db.select().from(invoices).orderBy(desc(invoices.issueDate)).all();
-  const allClients = db.select().from(clients).all();
-  const recentActivity = db
+export default async function DashboardPage() {
+  const settings = await getSettings();
+  const allInvoices = await db.select().from(invoices).orderBy(desc(invoices.issueDate));
+  const allClients = await db.select().from(clients);
+  const recentActivity = await db
     .select()
     .from(activities)
     .orderBy(desc(activities.createdAt))
-    .limit(8)
-    .all();
+    .limit(8);
 
   const withStatus = allInvoices.map((invoice) => ({ invoice, status: getDisplayStatus(invoice) }));
 
@@ -55,7 +54,7 @@ export default function DashboardPage() {
   const now = new Date();
   // Actual cash collected this month, not just invoices that reached "paid" —
   // a partial payment should count toward revenue the moment it's received.
-  const allPayments = db.select().from(payments).all();
+  const allPayments = await db.select().from(payments);
   const paidThisMonth = allPayments
     .filter(
       (p) =>

@@ -70,42 +70,38 @@ export async function createInvoice(_prev: unknown, formData: FormData) {
 
   const { items, ...values } = parsed.data;
   const { subtotal, total } = calcTotals(items, values.taxRate, values.discount);
-  const number = reserveInvoiceNumber();
+  const number = await reserveInvoiceNumber();
   const id = nanoid();
 
-  db.transaction((tx) => {
-    tx.insert(invoices)
-      .values({
-        id,
-        publicId: nanoid(16),
-        number,
-        clientId: values.clientId,
-        issueDate: values.issueDate,
-        dueDate: values.dueDate,
-        paymentTerms: values.paymentTerms,
-        currency: values.currency,
-        taxLabel: values.taxLabel,
-        taxRate: values.taxRate,
-        discount: values.discount,
-        subtotal,
-        total,
-        notes: values.notes,
-        terms: values.terms,
-      })
-      .run();
-
-    items.forEach((item, index) => {
-      tx.insert(invoiceItems)
-        .values({
-          id: nanoid(),
-          invoiceId: id,
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          sortOrder: index,
-        })
-        .run();
+  await db.transaction(async (tx) => {
+    await tx.insert(invoices).values({
+      id,
+      publicId: nanoid(16),
+      number,
+      clientId: values.clientId,
+      issueDate: values.issueDate,
+      dueDate: values.dueDate,
+      paymentTerms: values.paymentTerms,
+      currency: values.currency,
+      taxLabel: values.taxLabel,
+      taxRate: values.taxRate,
+      discount: values.discount,
+      subtotal,
+      total,
+      notes: values.notes,
+      terms: values.terms,
     });
+
+    for (const [index, item] of items.entries()) {
+      await tx.insert(invoiceItems).values({
+        id: nanoid(),
+        invoiceId: id,
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        sortOrder: index,
+      });
+    }
   });
 
   revalidatePath("/invoices");
@@ -119,14 +115,15 @@ export async function updateInvoice(id: string, _prev: unknown, formData: FormDa
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const existing = db.select().from(invoices).where(eq(invoices.id, id)).get();
+  const existing = (await db.select().from(invoices).where(eq(invoices.id, id)).limit(1))[0];
   if (!existing) return { error: "Invoice not found" };
 
   const { items, ...values } = parsed.data;
   const { subtotal, total } = calcTotals(items, values.taxRate, values.discount);
 
-  db.transaction((tx) => {
-    tx.update(invoices)
+  await db.transaction(async (tx) => {
+    await tx
+      .update(invoices)
       .set({
         clientId: values.clientId,
         issueDate: values.issueDate,
@@ -142,22 +139,19 @@ export async function updateInvoice(id: string, _prev: unknown, formData: FormDa
         terms: values.terms,
         updatedAt: new Date(),
       })
-      .where(eq(invoices.id, id))
-      .run();
+      .where(eq(invoices.id, id));
 
-    tx.delete(invoiceItems).where(eq(invoiceItems.invoiceId, id)).run();
-    items.forEach((item, index) => {
-      tx.insert(invoiceItems)
-        .values({
-          id: nanoid(),
-          invoiceId: id,
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          sortOrder: index,
-        })
-        .run();
-    });
+    await tx.delete(invoiceItems).where(eq(invoiceItems.invoiceId, id));
+    for (const [index, item] of items.entries()) {
+      await tx.insert(invoiceItems).values({
+        id: nanoid(),
+        invoiceId: id,
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        sortOrder: index,
+      });
+    }
   });
 
   revalidatePath("/invoices");
@@ -167,20 +161,20 @@ export async function updateInvoice(id: string, _prev: unknown, formData: FormDa
 
 export async function deleteInvoice(id: string) {
   await requireSession();
-  db.delete(invoices).where(eq(invoices.id, id)).run();
+  await db.delete(invoices).where(eq(invoices.id, id));
   revalidatePath("/invoices");
   redirect("/invoices");
 }
 
 export async function sendInvoice(id: string) {
   await requireSession();
-  const invoice = db.select().from(invoices).where(eq(invoices.id, id)).get();
+  const invoice = (await db.select().from(invoices).where(eq(invoices.id, id)).limit(1))[0];
   if (!invoice) return { error: "Invoice not found" };
 
-  const client = db.select().from(clients).where(eq(clients.id, invoice.clientId)).get();
+  const client = (await db.select().from(clients).where(eq(clients.id, invoice.clientId)).limit(1))[0];
   if (!client) return { error: "Client not found" };
 
-  const settings = getSettings();
+  const settings = await getSettings();
   const publicUrl = getPublicUrl();
   if (!publicUrl) {
     return {
@@ -189,7 +183,7 @@ export async function sendInvoice(id: string) {
   }
   const link = `${publicUrl}/i/${invoice.publicId}`;
 
-  const data = buildInvoicePdfData(id);
+  const data = await buildInvoicePdfData(id);
   const remaining = remainingBalance(invoice);
   const amountLabel =
     invoice.amountPaid > 0
@@ -220,19 +214,17 @@ export async function sendInvoice(id: string) {
     return { error: "Couldn't send the email. Check your email provider settings." };
   }
 
-  db.update(invoices)
+  await db
+    .update(invoices)
     .set({ status: "sent", sentAt: new Date(), updatedAt: new Date() })
-    .where(eq(invoices.id, id))
-    .run();
+    .where(eq(invoices.id, id));
 
-  db.insert(activities)
-    .values({
-      id: nanoid(),
-      clientId: invoice.clientId,
-      type: "invoice_sent",
-      content: `Invoice ${invoice.number} (${formatMoney(invoice.total, invoice.currency)}) sent.`,
-    })
-    .run();
+  await db.insert(activities).values({
+    id: nanoid(),
+    clientId: invoice.clientId,
+    type: "invoice_sent",
+    content: `Invoice ${invoice.number} (${formatMoney(invoice.total, invoice.currency)}) sent.`,
+  });
 
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/invoices");
@@ -241,22 +233,20 @@ export async function sendInvoice(id: string) {
 
 export async function markInvoicePaid(id: string) {
   await requireSession();
-  const invoice = db.select().from(invoices).where(eq(invoices.id, id)).get();
+  const invoice = (await db.select().from(invoices).where(eq(invoices.id, id)).limit(1))[0];
   if (!invoice) return;
 
-  db.update(invoices)
+  await db
+    .update(invoices)
     .set({ status: "paid", amountPaid: invoice.total, paidAt: new Date(), updatedAt: new Date() })
-    .where(eq(invoices.id, id))
-    .run();
+    .where(eq(invoices.id, id));
 
-  db.insert(activities)
-    .values({
-      id: nanoid(),
-      clientId: invoice.clientId,
-      type: "invoice_paid",
-      content: `Invoice ${invoice.number} (${formatMoney(invoice.total, invoice.currency)}) marked paid.`,
-    })
-    .run();
+  await db.insert(activities).values({
+    id: nanoid(),
+    clientId: invoice.clientId,
+    type: "invoice_paid",
+    content: `Invoice ${invoice.number} (${formatMoney(invoice.total, invoice.currency)}) marked paid.`,
+  });
 
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/invoices");
@@ -266,7 +256,7 @@ export async function markInvoicePaid(id: string) {
 
 export async function cancelInvoice(id: string, _prev: unknown, _formData: FormData) {
   await requireSession();
-  const invoice = db.select().from(invoices).where(eq(invoices.id, id)).get();
+  const invoice = (await db.select().from(invoices).where(eq(invoices.id, id)).limit(1))[0];
   if (!invoice) return { error: "Invoice not found" };
   if (invoice.amountPaid > 0) {
     return {
@@ -275,10 +265,10 @@ export async function cancelInvoice(id: string, _prev: unknown, _formData: FormD
     };
   }
 
-  db.update(invoices)
+  await db
+    .update(invoices)
     .set({ status: "cancelled", updatedAt: new Date() })
-    .where(eq(invoices.id, id))
-    .run();
+    .where(eq(invoices.id, id));
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/invoices");
   return { error: null, success: true };
@@ -286,10 +276,10 @@ export async function cancelInvoice(id: string, _prev: unknown, _formData: FormD
 
 export async function reopenInvoice(id: string) {
   await requireSession();
-  db.update(invoices)
+  await db
+    .update(invoices)
     .set({ status: "draft", sentAt: null, paidAt: null, updatedAt: new Date() })
-    .where(eq(invoices.id, id))
-    .run();
+    .where(eq(invoices.id, id));
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/invoices");
 }
@@ -311,7 +301,7 @@ export async function recordPayment(invoiceId: string, _prev: unknown, formData:
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const invoice = db.select().from(invoices).where(eq(invoices.id, invoiceId)).get();
+  const invoice = (await db.select().from(invoices).where(eq(invoices.id, invoiceId)).limit(1))[0];
   if (!invoice) return { error: "Invoice not found" };
   if (invoice.status === "draft") {
     return { error: "Send the invoice before recording a payment against it." };
@@ -334,37 +324,33 @@ export async function recordPayment(invoiceId: string, _prev: unknown, formData:
   const nowFullyPaid = newAmountPaid >= invoice.total - 0.005;
   const newRemaining = remainingBalance({ total: invoice.total, amountPaid: newAmountPaid });
 
-  db.transaction((tx) => {
-    tx.insert(payments)
-      .values({
-        id: nanoid(),
-        invoiceId,
-        amount: parsed.data.amount,
-        paidAt: parsed.data.paidAt,
-        note: parsed.data.note,
-      })
-      .run();
+  await db.transaction(async (tx) => {
+    await tx.insert(payments).values({
+      id: nanoid(),
+      invoiceId,
+      amount: parsed.data.amount,
+      paidAt: parsed.data.paidAt,
+      note: parsed.data.note,
+    });
 
-    tx.update(invoices)
+    await tx
+      .update(invoices)
       .set({
         amountPaid: newAmountPaid,
         status: nowFullyPaid ? "paid" : invoice.status,
         paidAt: nowFullyPaid ? parsed.data.paidAt : invoice.paidAt,
         updatedAt: new Date(),
       })
-      .where(eq(invoices.id, invoiceId))
-      .run();
+      .where(eq(invoices.id, invoiceId));
 
-    tx.insert(activities)
-      .values({
-        id: nanoid(),
-        clientId: invoice.clientId,
-        type: nowFullyPaid ? "invoice_paid" : "payment_received",
-        content: nowFullyPaid
-          ? `Invoice ${invoice.number} (${formatMoney(invoice.total, invoice.currency)}) paid in full.`
-          : `Payment of ${formatMoney(parsed.data.amount, invoice.currency)} received for ${invoice.number} (${formatMoney(newRemaining, invoice.currency)} remaining).`,
-      })
-      .run();
+    await tx.insert(activities).values({
+      id: nanoid(),
+      clientId: invoice.clientId,
+      type: nowFullyPaid ? "invoice_paid" : "payment_received",
+      content: nowFullyPaid
+        ? `Invoice ${invoice.number} (${formatMoney(invoice.total, invoice.currency)}) paid in full.`
+        : `Payment of ${formatMoney(parsed.data.amount, invoice.currency)} received for ${invoice.number} (${formatMoney(newRemaining, invoice.currency)} remaining).`,
+    });
   });
 
   revalidatePath(`/invoices/${invoiceId}`);
@@ -376,26 +362,26 @@ export async function recordPayment(invoiceId: string, _prev: unknown, formData:
 
 export async function deletePayment(invoiceId: string, paymentId: string) {
   await requireSession();
-  const invoice = db.select().from(invoices).where(eq(invoices.id, invoiceId)).get();
+  const invoice = (await db.select().from(invoices).where(eq(invoices.id, invoiceId)).limit(1))[0];
   if (!invoice) return;
-  const payment = db.select().from(payments).where(eq(payments.id, paymentId)).get();
+  const payment = (await db.select().from(payments).where(eq(payments.id, paymentId)).limit(1))[0];
   if (!payment) return;
 
   const newAmountPaid = Math.max(invoice.amountPaid - payment.amount, 0);
   const stillFullyPaid = newAmountPaid >= invoice.total - 0.005;
   const wasAutoPaid = invoice.status === "paid" && !stillFullyPaid;
 
-  db.transaction((tx) => {
-    tx.delete(payments).where(eq(payments.id, paymentId)).run();
-    tx.update(invoices)
+  await db.transaction(async (tx) => {
+    await tx.delete(payments).where(eq(payments.id, paymentId));
+    await tx
+      .update(invoices)
       .set({
         amountPaid: newAmountPaid,
         status: wasAutoPaid ? "sent" : invoice.status,
         paidAt: wasAutoPaid ? null : invoice.paidAt,
         updatedAt: new Date(),
       })
-      .where(eq(invoices.id, invoiceId))
-      .run();
+      .where(eq(invoices.id, invoiceId));
   });
 
   revalidatePath(`/invoices/${invoiceId}`);

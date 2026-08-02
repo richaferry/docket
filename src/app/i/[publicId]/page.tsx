@@ -17,18 +17,17 @@ export default async function PublicInvoicePage({
   params: Promise<{ publicId: string }>;
 }) {
   const { publicId } = await params;
-  const invoice = db.select().from(invoices).where(eq(invoices.publicId, publicId)).get();
+  const invoice = (await db.select().from(invoices).where(eq(invoices.publicId, publicId)).limit(1))[0];
   if (!invoice) notFound();
 
-  const client = db.select().from(clients).where(eq(clients.id, invoice.clientId)).get();
-  const items = db
+  const client = (await db.select().from(clients).where(eq(clients.id, invoice.clientId)).limit(1))[0];
+  const items = await db
     .select()
     .from(invoiceItems)
     .where(eq(invoiceItems.invoiceId, invoice.id))
-    .orderBy(asc(invoiceItems.sortOrder))
-    .all();
+    .orderBy(asc(invoiceItems.sortOrder));
 
-  const settings = getSettings();
+  const settings = await getSettings();
   const displayStatus = getDisplayStatus(invoice);
   const taxable = Math.max(invoice.subtotal - invoice.discount, 0);
   const taxAmount = taxable * (invoice.taxRate / 100);

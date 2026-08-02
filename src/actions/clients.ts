@@ -39,13 +39,9 @@ export async function createClient(_prev: unknown, formData: FormData) {
   }
 
   const id = nanoid();
-  db.insert(clients)
-    .values({ id, ...parsed.data })
-    .run();
+  await db.insert(clients).values({ id, ...parsed.data });
 
-  db.insert(activities)
-    .values({ id: nanoid(), clientId: id, type: "note", content: "Client added." })
-    .run();
+  await db.insert(activities).values({ id: nanoid(), clientId: id, type: "note", content: "Client added." });
 
   revalidatePath("/clients");
   redirect(`/clients/${id}`);
@@ -58,23 +54,20 @@ export async function updateClient(id: string, _prev: unknown, formData: FormDat
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const existing = db.select().from(clients).where(eq(clients.id, id)).get();
+  const existing = (await db.select().from(clients).where(eq(clients.id, id)).limit(1))[0];
   if (!existing) return { error: "Client not found" };
 
-  db.update(clients)
-    .set({ ...parsed.data, updatedAt: new Date() })
-    .where(eq(clients.id, id))
-    .run();
+  await db.update(clients).set({ ...parsed.data, updatedAt: new Date() }).where(eq(clients.id, id));
 
   if (existing.status !== parsed.data.status) {
-    db.insert(activities)
+    await db
+      .insert(activities)
       .values({
         id: nanoid(),
         clientId: id,
         type: "status_change",
         content: `Status changed from ${existing.status} to ${parsed.data.status}.`,
-      })
-      .run();
+      });
   }
 
   revalidatePath("/clients");
@@ -97,9 +90,7 @@ export async function addActivity(clientId: string, _prev: unknown, formData: Fo
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  db.insert(activities)
-    .values({ id: nanoid(), clientId, ...parsed.data })
-    .run();
+  await db.insert(activities).values({ id: nanoid(), clientId, ...parsed.data });
 
   revalidatePath(`/clients/${clientId}`);
   return { error: null, success: true };
@@ -108,7 +99,7 @@ export async function addActivity(clientId: string, _prev: unknown, formData: Fo
 export async function deleteClient(id: string) {
   await requireSession();
   try {
-    db.delete(clients).where(eq(clients.id, id)).run();
+    await db.delete(clients).where(eq(clients.id, id));
   } catch {
     return { error: "This client has invoices on file and can't be deleted. Archive them instead." };
   }

@@ -19,10 +19,10 @@ export function calcTotals(items: InvoiceItemInput[], taxRate: number, discount:
   return { subtotal, taxAmount, total };
 }
 
-export function reserveInvoiceNumber(): string {
-  const settings = getSettings();
+export async function reserveInvoiceNumber(): Promise<string> {
+  const settings = await getSettings();
   const number = `${settings.invoicePrefix}${String(settings.nextInvoiceNumber).padStart(4, "0")}`;
-  updateSettings({ nextInvoiceNumber: settings.nextInvoiceNumber + 1 });
+  await updateSettings({ nextInvoiceNumber: settings.nextInvoiceNumber + 1 });
   return number;
 }
 
@@ -55,21 +55,20 @@ export function remainingBalance(invoice: { total: number; amountPaid: number })
   return Math.max(invoice.total - invoice.amountPaid, 0);
 }
 
-export function buildInvoicePdfData(invoiceId: string): InvoicePdfData {
-  const invoice = db.select().from(invoices).where(eq(invoices.id, invoiceId)).get();
+export async function buildInvoicePdfData(invoiceId: string): Promise<InvoicePdfData> {
+  const invoice = (await db.select().from(invoices).where(eq(invoices.id, invoiceId)).limit(1))[0];
   if (!invoice) throw new Error("Invoice not found");
 
-  const client = db.select().from(clients).where(eq(clients.id, invoice.clientId)).get();
+  const client = (await db.select().from(clients).where(eq(clients.id, invoice.clientId)).limit(1))[0];
   if (!client) throw new Error("Client not found");
 
-  const items = db
+  const items = await db
     .select()
     .from(invoiceItems)
     .where(eq(invoiceItems.invoiceId, invoiceId))
-    .orderBy(asc(invoiceItems.sortOrder))
-    .all();
+    .orderBy(asc(invoiceItems.sortOrder));
 
-  const settings = getSettings();
+  const settings = await getSettings();
 
   return {
     number: invoice.number,

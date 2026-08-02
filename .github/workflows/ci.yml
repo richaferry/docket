@@ -38,6 +38,20 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: docket
+          POSTGRES_PASSWORD: docket
+          POSTGRES_DB: docket
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U docket -d docket"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -45,5 +59,6 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: DATABASE_URL=postgres://docket:docket@localhost:5432/docket npm run db:migrate
       - run: npx tsc --noEmit
-      - run: npm run build
+      - run: DATABASE_URL=postgres://docket:docket@localhost:5432/docket npm run build

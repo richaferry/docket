@@ -81,14 +81,14 @@ describe("sendMail", () => {
 
   describe("routing", () => {
     it("routes to SMTP when emailProvider is smtp", async () => {
-      vi.mocked(getSettings).mockReturnValue(makeSettings({ emailProvider: "smtp" }));
+      vi.mocked(getSettings).mockResolvedValue(makeSettings({ emailProvider: "smtp" }));
       await sendMail(baseOptions);
       expect(nodemailer.createTransport).toHaveBeenCalledTimes(1);
       expect(fetch).not.toHaveBeenCalled();
     });
 
     it("routes to MailAnvil when emailProvider is mailanvil", async () => {
-      vi.mocked(getSettings).mockReturnValue(
+      vi.mocked(getSettings).mockResolvedValue(
         makeSettings({ emailProvider: "mailanvil", mailanvilApiKey: "key_123" }),
       );
       vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 200 }));
@@ -100,22 +100,22 @@ describe("sendMail", () => {
 
   describe("SMTP transport", () => {
     it("throws MailerNotConfiguredError when smtpHost is missing", async () => {
-      vi.mocked(getSettings).mockReturnValue(makeSettings({ smtpHost: null }));
+      vi.mocked(getSettings).mockResolvedValue(makeSettings({ smtpHost: null }));
       await expect(sendMail(baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
     });
 
     it("throws MailerNotConfiguredError when smtpUser is missing", async () => {
-      vi.mocked(getSettings).mockReturnValue(makeSettings({ smtpUser: null }));
+      vi.mocked(getSettings).mockResolvedValue(makeSettings({ smtpUser: null }));
       await expect(sendMail(baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
     });
 
     it("throws MailerNotConfiguredError when smtpPass is missing", async () => {
-      vi.mocked(getSettings).mockReturnValue(makeSettings({ smtpPass: null }));
+      vi.mocked(getSettings).mockResolvedValue(makeSettings({ smtpPass: null }));
       await expect(sendMail(baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
     });
 
     it("throws MailerNotConfiguredError when fromEmail is missing", async () => {
-      vi.mocked(getSettings).mockReturnValue(makeSettings({ fromEmail: null }));
+      vi.mocked(getSettings).mockResolvedValue(makeSettings({ fromEmail: null }));
       await expect(sendMail(baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
     });
 
@@ -129,7 +129,7 @@ describe("sendMail", () => {
         fromName: "Acme Billing",
         fromEmail: "billing@acme.test",
       });
-      vi.mocked(getSettings).mockReturnValue(settings);
+      vi.mocked(getSettings).mockResolvedValue(settings);
 
       const attachments = [{ filename: "invoice.pdf", content: Buffer.from("pdf-bytes") }];
       await sendMail({ ...baseOptions, attachments });
@@ -152,7 +152,7 @@ describe("sendMail", () => {
     });
 
     it("defaults the SMTP port to 587 when smtpPort is not set", async () => {
-      vi.mocked(getSettings).mockReturnValue(makeSettings({ smtpPort: null }));
+      vi.mocked(getSettings).mockResolvedValue(makeSettings({ smtpPort: null }));
       await sendMail(baseOptions);
       expect(nodemailer.createTransport).toHaveBeenCalledWith(
         expect.objectContaining({ port: 587 }),
@@ -160,7 +160,7 @@ describe("sendMail", () => {
     });
 
     it("falls back to businessName for the from display name when fromName is not set", async () => {
-      vi.mocked(getSettings).mockReturnValue(
+      vi.mocked(getSettings).mockResolvedValue(
         makeSettings({ fromName: null, businessName: "Acme Co", fromEmail: "billing@acme.test" }),
       );
       await sendMail(baseOptions);
@@ -184,19 +184,19 @@ describe("sendMail", () => {
     }
 
     it("throws MailerNotConfiguredError when mailanvilApiKey is missing", async () => {
-      vi.mocked(getSettings).mockReturnValue(mailanvilSettings({ mailanvilApiKey: null }));
+      vi.mocked(getSettings).mockResolvedValue(mailanvilSettings({ mailanvilApiKey: null }));
       await expect(sendMail(baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
       expect(fetch).not.toHaveBeenCalled();
     });
 
     it("throws MailerNotConfiguredError when fromEmail is missing", async () => {
-      vi.mocked(getSettings).mockReturnValue(mailanvilSettings({ fromEmail: null }));
+      vi.mocked(getSettings).mockResolvedValue(mailanvilSettings({ fromEmail: null }));
       await expect(sendMail(baseOptions)).rejects.toBeInstanceOf(MailerNotConfiguredError);
       expect(fetch).not.toHaveBeenCalled();
     });
 
     it("posts the expected request body and headers, mapping url-based attachments to path", async () => {
-      vi.mocked(getSettings).mockReturnValue(mailanvilSettings());
+      vi.mocked(getSettings).mockResolvedValue(mailanvilSettings());
       vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 200 }));
 
       const attachments = [
@@ -230,7 +230,7 @@ describe("sendMail", () => {
     });
 
     it("maps attachments without a url to base64 content", async () => {
-      vi.mocked(getSettings).mockReturnValue(mailanvilSettings());
+      vi.mocked(getSettings).mockResolvedValue(mailanvilSettings());
       vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 200 }));
 
       const content = Buffer.from("pdf-bytes");
@@ -244,7 +244,7 @@ describe("sendMail", () => {
     });
 
     it("omits the attachments field entirely when no attachments are provided", async () => {
-      vi.mocked(getSettings).mockReturnValue(mailanvilSettings());
+      vi.mocked(getSettings).mockResolvedValue(mailanvilSettings());
       vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 200 }));
 
       await sendMail(baseOptions);
@@ -255,7 +255,7 @@ describe("sendMail", () => {
     });
 
     it("falls back to businessName for from_name when fromName is not set", async () => {
-      vi.mocked(getSettings).mockReturnValue(mailanvilSettings({ fromName: null, businessName: "Acme Co" }));
+      vi.mocked(getSettings).mockResolvedValue(mailanvilSettings({ fromName: null, businessName: "Acme Co" }));
       vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 200 }));
 
       await sendMail(baseOptions);
@@ -266,7 +266,7 @@ describe("sendMail", () => {
     });
 
     it("throws MailProviderError with the API's error message on failure", async () => {
-      vi.mocked(getSettings).mockReturnValue(mailanvilSettings());
+      vi.mocked(getSettings).mockResolvedValue(mailanvilSettings());
       vi.mocked(fetch).mockResolvedValue(
         new Response(JSON.stringify({ error: { message: "Invalid email" } }), { status: 422 }),
       );
@@ -277,14 +277,14 @@ describe("sendMail", () => {
     });
 
     it("falls back to a generic message when the error body has no error.message", async () => {
-      vi.mocked(getSettings).mockReturnValue(mailanvilSettings());
+      vi.mocked(getSettings).mockResolvedValue(mailanvilSettings());
       vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({}), { status: 500 }));
 
       await expect(sendMail(baseOptions)).rejects.toThrow("MailAnvil request failed (500)");
     });
 
     it("falls back to a generic message when the error body isn't valid JSON", async () => {
-      vi.mocked(getSettings).mockReturnValue(mailanvilSettings());
+      vi.mocked(getSettings).mockResolvedValue(mailanvilSettings());
       vi.mocked(fetch).mockResolvedValue(new Response("not json", { status: 503 }));
 
       await expect(sendMail(baseOptions)).rejects.toThrow("MailAnvil request failed (503)");
