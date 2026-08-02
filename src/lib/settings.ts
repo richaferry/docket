@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { settings, tenants } from "@/db/schema";
+import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export type Settings = typeof settings.$inferSelect;
@@ -48,8 +48,16 @@ export async function updateSettings(
   return getSettings(tenantId);
 }
 
-// Onboarding has happened once at least one tenant exists.
-export async function isOnboarded(): Promise<boolean> {
-  const rows = await db.select({ id: tenants.id }).from(tenants).limit(1);
-  return rows.length > 0;
+// A tenant's workspace is set up once its settings row has a business name.
+// register() creates the tenant without a settings row; setupWorkspace() fills
+// it in. A session alone isn't enough — the user must complete the workspace
+// step before the dashboard opens.
+export async function isTenantOnboarded(tenantId: string): Promise<boolean> {
+  const rows = await db
+    .select({ businessName: settings.businessName })
+    .from(settings)
+    .where(eq(settings.tenantId, tenantId))
+    .limit(1);
+  const row = rows[0];
+  return Boolean(row?.businessName?.trim());
 }

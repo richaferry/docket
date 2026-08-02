@@ -3,15 +3,17 @@
 import { randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { tenants, settings } from "@/db/schema";
+import { tenants } from "@/db/schema";
 import {
   createSession,
   destroySession,
   hashPassword,
+  requireSession,
   verifyPassword,
 } from "@/lib/auth";
+import { isTenantOnboarded, updateSettings } from "@/lib/settings";
 import { isSignupDisabled, getPublicUrl } from "@/lib/env";
 import {
   createEmailVerificationToken,
@@ -42,52 +44,25 @@ async function findTenantByEmail(email: string) {
 
 const setupSchema = z.object({
   businessName: z.string().min(1),
-  adminEmail: z.string().email(),
-  password: z.string().min(8),
 });
 
-// Serializes concurrent first-setup requests with a transaction-scoped
-// advisory lock so the isOnboarded check + tenant insert are atomic and only
-// one tenant can ever be created.
-const SETUP_LOCK_KEY = 727003;
+// The workspace step runs after email verification. The user is already signed
+// in (verifyEmail auto-logins), so this just fills in the business name and
+// opens the dashboard.
+export async function setupWorkspace(_prev: unknown, formData: FormData): Promise<AuthActionResult> {
+  const session = await requireSession();
 
-export async function setupAccount(_prev: unknown, formData: FormData): Promise<AuthActionResult> {
   const parsed = setupSchema.safeParse({
     businessName: formData.get("businessName"),
-    adminEmail: formData.get("adminEmail"),
-    password: formData.get("password"),
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { businessName, adminEmail, password } = parsed.data;
-  const email = normalizeEmail(adminEmail);
+  const { businessName } = parsed.data;
+  await updateSettings(session.tenantId, { businessName });
 
-  const tenantId = `mt-${randomBytes(12).toString("hex")}`;
-  const onboarded = await db.transaction(async (tx) => {
-    await tx.execute(sql`SELECT pg_advisory_xact_lock(${SETUP_LOCK_KEY})`);
-    const rows = await tx.select({ id: tenants.id }).from(tenants).limit(1);
-    if (rows.length > 0) return true;
-    await tx.insert(tenants).values({
-      id: tenantId,
-      authSecret: randomBytes(32).toString("hex"),
-      adminEmail: email,
-      adminPasswordHash: hashPassword(password),
-      emailVerified: true,
-      failedLoginAttempts: 0,
-      loginLockedUntil: null,
-    });
-    await tx.insert(settings).values({ tenantId, businessName });
-    return false;
-  });
-
-  if (onboarded) {
-    redirect("/login");
-  }
-
-  await createSession(tenantId, email);
   redirect("/app");
 }
 
@@ -145,12 +120,18 @@ export async function login(_prev: unknown, formData: FormData): Promise<AuthAct
     .update(tenants)
     .set({ failedLoginAttempts: 0, loginLockedUntil: null })
     .where(eq(tenants.id, tenant.id));
+
   await createSession(tenant.id, tenant.adminEmail);
+
+  // A verified user who logged out before finishing the workspace step goes
+  // straight back to it instead of the dashboard.
+  if (!(await isTenantOnboarded(tenant.id))) {
+    redirect("/setup");
+  }
   redirect("/app");
 }
 
 const registerSchema = z.object({
-  businessName: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(8),
 });
@@ -161,7 +142,6 @@ export async function register(_prev: unknown, formData: FormData): Promise<Auth
   }
 
   const parsed = registerSchema.safeParse({
-    businessName: formData.get("businessName"),
     email: formData.get("email"),
     password: formData.get("password"),
   });
@@ -170,7 +150,7 @@ export async function register(_prev: unknown, formData: FormData): Promise<Auth
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { businessName, email: rawEmail, password } = parsed.data;
+  const { email: rawEmail, password } = parsed.data;
   const email = normalizeEmail(rawEmail);
 
   const existing = await findTenantByEmail(email);
@@ -179,18 +159,14 @@ export async function register(_prev: unknown, formData: FormData): Promise<Auth
   }
 
   const tenantId = `mt-${randomBytes(12).toString("hex")}`;
-  await db.transaction(async (tx) => {
-    await tx.insert(tenants).values({
-      id: tenantId,
-      authSecret: randomBytes(32).toString("hex"),
-      adminEmail: email,
-      adminPasswordHash: hashPassword(password),
-      emailVerified: false,
-      failedLoginAttempts: 0,
-      loginLockedUntil: null,
-    });
-
-    await tx.insert(settings).values({ tenantId, businessName });
+  await db.insert(tenants).values({
+    id: tenantId,
+    authSecret: randomBytes(32).toString("hex"),
+    adminEmail: email,
+    adminPasswordHash: hashPassword(password),
+    emailVerified: false,
+    failedLoginAttempts: 0,
+    loginLockedUntil: null,
   });
 
   const token = await createEmailVerificationToken(tenantId, email);
@@ -240,7 +216,9 @@ export async function verifyEmail(_prev: unknown, formData: FormData): Promise<A
     .set({ emailVerified: true })
     .where(eq(tenants.id, payload.tenantId));
 
-  redirect("/login?verified=1");
+  // Sign the user in so they continue straight into the workspace step.
+  await createSession(payload.tenantId, payload.email);
+  redirect("/setup");
 }
 
 export async function forgotPassword(_prev: unknown, formData: FormData): Promise<AuthActionResult> {
