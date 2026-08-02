@@ -73,6 +73,137 @@
   color-scheme: dark;
 }
 
+/* ---- Alternative palettes for the /v1, /v2, /v3 preview pages ----
+   Each scoped block redefines the theme tokens on the wrapper element set by
+   PalettePreview, so the overridden values cascade to the whole preview.
+   v2 ("Sky") is the default theme above and needs no override. */
+
+/* v1 — Warm paper (the original terracotta look) */
+[data-palette="v1"] {
+  --paper: #f6f1e7;
+  --paper-raised: #fffdf8;
+  --ink: #211d16;
+  --ink-muted: #6b6455;
+  --line: #e3dac4;
+
+  --accent: #a84328;
+  --accent-ink: #fff8f2;
+  --accent-soft: #f1ded4;
+
+  --success: #2f6f4e;
+  --success-soft: #e2ecdf;
+  --warning: #80641f;
+  --warning-soft: #f2ead1;
+  --danger: #af2c3e;
+  --danger-soft: #f2dbdf;
+  --neutral-soft: #ece6d6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-palette="v1"] {
+    --paper: #17140d;
+    --paper-raised: #221e15;
+    --ink: #ece4d3;
+    --ink-muted: #a89d87;
+    --line: #35301f;
+
+    --accent: #e0754f;
+    --accent-ink: #1c0f09;
+    --accent-soft: #3a2015;
+
+    --success: #7bbd94;
+    --success-soft: #1e2c22;
+    --warning: #d9b654;
+    --warning-soft: #2e2712;
+    --danger: #ea5570;
+    --danger-soft: #34171e;
+    --neutral-soft: #2a2519;
+  }
+}
+
+:root[data-theme="dark"] [data-palette="v1"] {
+  --paper: #17140d;
+  --paper-raised: #221e15;
+  --ink: #ece4d3;
+  --ink-muted: #a89d87;
+  --line: #35301f;
+
+  --accent: #e0754f;
+  --accent-ink: #1c0f09;
+  --accent-soft: #3a2015;
+
+  --success: #7bbd94;
+  --success-soft: #1e2c22;
+  --warning: #d9b654;
+  --warning-soft: #2e2712;
+  --danger: #ea5570;
+  --danger-soft: #34171e;
+  --neutral-soft: #2a2519;
+}
+
+/* v3 — Sage (a calm green suggestion) */
+[data-palette="v3"] {
+  --paper: #edf2eb;
+  --paper-raised: #f8faf7;
+  --ink: #1b2a21;
+  --ink-muted: #5d6f63;
+  --line: #d5e0d2;
+
+  --accent: #2f7a55;
+  --accent-ink: #f3faf5;
+  --accent-soft: #d7e8db;
+
+  --success: #2f7a55;
+  --success-soft: #dbeade;
+  --warning: #93751f;
+  --warning-soft: #f1ebd6;
+  --danger: #b0434f;
+  --danger-soft: #f5e0e3;
+  --neutral-soft: #dfe8dc;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-palette="v3"] {
+    --paper: #0f1a13;
+    --paper-raised: #17251b;
+    --ink: #e6efe7;
+    --ink-muted: #93a699;
+    --line: #243529;
+
+    --accent: #7cc3a0;
+    --accent-ink: #0c1b11;
+    --accent-soft: #1d3527;
+
+    --success: #7cc4a6;
+    --success-soft: #173026;
+    --warning: #d9c26a;
+    --warning-soft: #30291a;
+    --danger: #ea6b80;
+    --danger-soft: #381d24;
+    --neutral-soft: #1c2d22;
+  }
+}
+
+:root[data-theme="dark"] [data-palette="v3"] {
+  --paper: #0f1a13;
+  --paper-raised: #17251b;
+  --ink: #e6efe7;
+  --ink-muted: #93a699;
+  --line: #243529;
+
+  --accent: #7cc3a0;
+  --accent-ink: #0c1b11;
+  --accent-soft: #1d3527;
+
+  --success: #7cc4a6;
+  --success-soft: #173026;
+  --warning: #d9c26a;
+  --warning-soft: #30291a;
+  --danger: #ea6b80;
+  --danger-soft: #381d24;
+  --neutral-soft: #1c2d22;
+}
+
 @theme inline {
   --color-paper: var(--paper);
   --color-paper-raised: var(--paper-raised);
