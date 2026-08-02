@@ -28,12 +28,12 @@ export function InvoiceActions({
     <div className="flex flex-col items-start gap-2 sm:items-end">
       <div className="flex flex-wrap items-center gap-2">
         {status === "draft" && (
-          <LinkButton href={`/invoices/${id}/edit`} variant="secondary" size="sm">
+          <LinkButton href={`/app/invoices/${id}/edit`} variant="secondary" size="sm">
             Edit
           </LinkButton>
         )}
 
-        <LinkButton href={`/invoices/${id}/pdf`} variant="secondary" size="sm">
+        <LinkButton href={`/app/invoices/${id}/pdf`} variant="secondary" size="sm">
           <Download size={14} aria-hidden="true" /> PDF
         </LinkButton>
 

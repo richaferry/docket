@@ -44,7 +44,7 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
         <InvoiceForm
           action={action}
           clients={allClients}
-          cancelHref={`/invoices/${invoice.id}`}
+          cancelHref={`/app/invoices/${invoice.id}`}
           defaultValues={{
             id: invoice.id,
             clientId: invoice.clientId,

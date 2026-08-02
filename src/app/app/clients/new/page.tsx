@@ -7,7 +7,7 @@ export default function NewClientPage() {
     <div>
       <PageHeader eyebrow="CRM" title="New client" />
       <div className="max-w-2xl px-4 py-6 sm:px-8">
-        <ClientForm action={createClient} cancelHref="/clients" />
+        <ClientForm action={createClient} cancelHref="/app/clients" />
       </div>
     </div>
   );

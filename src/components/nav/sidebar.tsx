@@ -19,10 +19,10 @@ import { logout } from "@/actions/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const links = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
-  { href: "/clients", label: "Clients", icon: Users },
-  { href: "/invoices", label: "Invoices", icon: FileText },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/app", label: "Overview", icon: LayoutDashboard },
+  { href: "/app/clients", label: "Clients", icon: Users },
+  { href: "/app/invoices", label: "Invoices", icon: FileText },
+  { href: "/app/settings", label: "Settings", icon: Settings },
 ];
 
 const SIDEBAR_COLLAPSE_KEY = "sidebar-collapsed";
@@ -66,7 +66,7 @@ function NavLinks({
   return (
     <nav className="flex flex-1 flex-col gap-0.5" aria-label="Main">
       {links.map((link) => {
-        const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+        const active = link.href === "/app" ? pathname === "/app" : pathname.startsWith(link.href);
         const Icon = link.icon;
         return (
           <Link

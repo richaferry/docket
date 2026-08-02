@@ -50,7 +50,7 @@ export default async function InvoicesPage({
       <PageHeader
         eyebrow="Billing"
         title="Invoices"
-        actions={<LinkButton href="/invoices/new">New invoice</LinkButton>}
+        actions={<LinkButton href="/app/invoices/new">New invoice</LinkButton>}
       />
 
       <nav aria-label="Filter invoices by status" className="overflow-x-auto border-b border-line px-4 pt-4 sm:px-8">
@@ -58,7 +58,7 @@ export default async function InvoicesPage({
           {FILTERS.map((f) => (
             <Link
               key={f.value}
-              href={f.value === "all" ? "/invoices" : `/invoices?status=${f.value}`}
+              href={f.value === "all" ? "/app/invoices" : `/app/invoices?status=${f.value}`}
               aria-current={active === f.value ? "page" : undefined}
               className={cn(
                 "whitespace-nowrap rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors",
@@ -99,7 +99,7 @@ export default async function InvoicesPage({
                     >
                       <td className="px-4 py-3">
                         <Link
-                          href={`/invoices/${invoice.id}`}
+                          href={`/app/invoices/${invoice.id}`}
                           className="font-tabular font-medium text-ink hover:text-accent"
                         >
                           {invoice.number}
@@ -140,7 +140,7 @@ function EmptyState() {
         <p className="font-display text-lg text-ink">No invoices here</p>
         <p className="text-sm text-ink-muted">Create your first invoice to get paid.</p>
       </div>
-      <LinkButton href="/invoices/new" size="sm">
+      <LinkButton href="/app/invoices/new" size="sm">
         New invoice
       </LinkButton>
     </div>

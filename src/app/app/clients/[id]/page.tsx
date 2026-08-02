@@ -55,10 +55,10 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         title={client.name}
         actions={
           <>
-            <LinkButton href={`/invoices/new?clientId=${client.id}`} variant="secondary" size="sm">
+            <LinkButton href={`/app/invoices/new?clientId=${client.id}`} variant="secondary" size="sm">
               New invoice
             </LinkButton>
-            <LinkButton href={`/clients/${client.id}/edit`} size="sm">
+            <LinkButton href={`/app/clients/${client.id}/edit`} size="sm">
               Edit
             </LinkButton>
           </>
@@ -112,7 +112,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
                   return (
                     <li key={invoice.id}>
                       <Link
-                        href={`/invoices/${invoice.id}`}
+                        href={`/app/invoices/${invoice.id}`}
                         className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-neutral-soft/40"
                       >
                         <div>
