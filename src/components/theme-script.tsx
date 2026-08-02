@@ -1,9 +1,26 @@
 const THEME_INIT_SCRIPT = `
 (function () {
   try {
-    var theme = localStorage.getItem("theme");
+    function readCookie(name) {
+      var match = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
+      return match ? decodeURIComponent(match[1]) : null;
+    }
+    var theme = readCookie("theme");
+    if (theme !== "light" && theme !== "dark") {
+      var legacy = null;
+      try {
+        legacy = localStorage.getItem("theme");
+      } catch (e) {}
+      if (legacy === "light" || legacy === "dark") {
+        document.cookie = "theme=" + legacy + "; path=/; max-age=31536000; samesite=lax";
+        theme = legacy;
+      }
+    }
     if (theme === "light" || theme === "dark") {
       document.documentElement.setAttribute("data-theme", theme);
+      try {
+        localStorage.setItem("theme", theme);
+      } catch (e) {}
     }
   } catch (e) {}
 })();

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logout } from "@/actions/auth";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggleMenu, type ThemePref } from "@/components/theme-toggle-menu";
 
 const links = [
   { href: "/app", label: "Overview", icon: LayoutDashboard },
@@ -110,7 +110,7 @@ function SignOutButton({ collapsed }: { collapsed?: boolean }) {
   );
 }
 
-export function Sidebar({ businessName }: { businessName: string }) {
+export function Sidebar({ businessName, initialPref }: { businessName: string; initialPref: ThemePref }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [lastPathname, setLastPathname] = useState(pathname);
@@ -160,7 +160,7 @@ export function Sidebar({ businessName }: { businessName: string }) {
           <Menu size={20} aria-hidden="true" />
         </button>
         <p className="font-display text-base leading-tight text-ink">{businessName || "Docket"}</p>
-        <ThemeToggle />
+        <ThemeToggleMenu initialPref={initialPref} />
       </div>
 
       {/* Mobile drawer */}
@@ -196,7 +196,7 @@ export function Sidebar({ businessName }: { businessName: string }) {
               </button>
             </div>
             <NavLinks pathname={pathname} onNavigate={() => setOpen(false)} />
-            <ThemeToggle menuAlign="left" className="mb-2 self-start" />
+            <ThemeToggleMenu initialPref={initialPref} menuAlign="left" className="mb-2 self-start" />
             <SignOutButton />
           </aside>
         </div>
@@ -234,7 +234,7 @@ export function Sidebar({ businessName }: { businessName: string }) {
         </div>
         <NavLinks pathname={pathname} collapsed={collapsed} />
         <div className={cn("mt-4 flex flex-col gap-2", collapsed && "items-center")}>
-          <ThemeToggle menuAlign="left" />
+          <ThemeToggleMenu initialPref={initialPref} menuAlign="left" />
           <SignOutButton collapsed={collapsed} />
         </div>
       </aside>

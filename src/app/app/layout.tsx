@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession, requireSession } from "@/lib/auth";
 import { isOnboarded, getSettings } from "@/lib/settings";
+import { getThemePref } from "@/lib/theme";
 import { Sidebar } from "@/components/nav/sidebar";
 
 // Everything under /(app) is behind auth and renders per-request. Marking the
@@ -21,10 +22,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { tenantId } = await requireSession();
   const settings = await getSettings(tenantId);
+  const initialPref = await getThemePref();
 
   return (
     <div className="flex min-h-screen w-full flex-col md:flex-row">
-      <Sidebar businessName={settings.businessName} />
+      <Sidebar businessName={settings.businessName} initialPref={initialPref} />
       <main id="main-content" tabIndex={-1} className="flex-1 min-w-0">
         {children}
       </main>
