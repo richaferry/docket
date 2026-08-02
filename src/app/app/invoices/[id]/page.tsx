@@ -197,7 +197,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             <CardBody className="flex flex-col gap-2 text-sm">
               {client ? (
                 <>
-                  <Link href={`/clients/${client.id}`} className="font-medium text-ink hover:text-accent">
+                  <Link href={`/app/clients/${client.id}`} className="font-medium text-ink hover:text-accent">
                     {client.company || client.name}
                   </Link>
                   {client.company && <p className="text-ink-muted">{client.name}</p>}

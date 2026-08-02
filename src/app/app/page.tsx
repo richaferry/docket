@@ -91,10 +91,10 @@ export default async function DashboardPage() {
         title="Overview"
         actions={
           <>
-            <LinkButton href="/clients/new" variant="secondary" size="sm">
+            <LinkButton href="/app/clients/new" variant="secondary" size="sm">
               New client
             </LinkButton>
-            <LinkButton href="/invoices/new" size="sm">
+            <LinkButton href="/app/invoices/new" size="sm">
               New invoice
             </LinkButton>
           </>
@@ -117,7 +117,7 @@ export default async function DashboardPage() {
         <Card className="lg:col-span-2">
           <div className="flex items-center justify-between border-b border-line px-5 py-4">
             <h2 className="font-medium text-ink">Payments due</h2>
-            <Link href="/invoices" className="text-sm text-ink-muted hover:text-accent">
+            <Link href="/app/invoices" className="text-sm text-ink-muted hover:text-accent">
               View all
             </Link>
           </div>
@@ -132,7 +132,7 @@ export default async function DashboardPage() {
                 return (
                   <li key={invoice.id}>
                     <Link
-                      href={`/invoices/${invoice.id}`}
+                      href={`/app/invoices/${invoice.id}`}
                       className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-neutral-soft/40"
                     >
                       <div>

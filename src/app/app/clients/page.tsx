@@ -29,7 +29,7 @@ export default async function ClientsPage() {
       <PageHeader
         eyebrow="CRM"
         title="Clients"
-        actions={<LinkButton href="/clients/new">New client</LinkButton>}
+        actions={<LinkButton href="/app/clients/new">New client</LinkButton>}
       />
 
       <div className="px-4 py-6 sm:px-8">
@@ -56,7 +56,7 @@ export default async function ClientsPage() {
                       className="border-b border-line last:border-0 hover:bg-neutral-soft/40"
                     >
                       <td className="px-4 py-3">
-                        <Link href={`/clients/${client.id}`} className="font-medium text-ink hover:text-accent">
+                        <Link href={`/app/clients/${client.id}`} className="font-medium text-ink hover:text-accent">
                           {client.name}
                         </Link>
                         <p className="text-xs text-ink-muted">{client.email}</p>
@@ -88,7 +88,7 @@ function EmptyState() {
         <p className="font-display text-lg text-ink">No clients yet</p>
         <p className="text-sm text-ink-muted">Add your first client to start tracking work.</p>
       </div>
-      <LinkButton href="/clients/new" size="sm">
+      <LinkButton href="/app/clients/new" size="sm">
         New client
       </LinkButton>
     </div>

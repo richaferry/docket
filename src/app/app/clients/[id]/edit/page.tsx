@@ -30,7 +30,7 @@ export default async function EditClientPage({ params }: { params: Promise<{ id:
         actions={<DeleteClientButton id={client.id} />}
       />
       <div className="max-w-2xl px-4 py-6 sm:px-8">
-        <ClientForm action={action} defaultValues={client} cancelHref={`/clients/${client.id}`} />
+        <ClientForm action={action} defaultValues={client} cancelHref={`/app/clients/${client.id}`} />
       </div>
     </div>
   );

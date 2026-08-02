@@ -30,7 +30,7 @@ export default async function NewInvoicePage({
         <InvoiceForm
           action={createInvoice}
           clients={allClients}
-          cancelHref="/invoices"
+          cancelHref="/app/invoices"
           defaultValues={{
             clientId: clientId ?? "",
             issueDate: todayISO(),

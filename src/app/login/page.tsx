@@ -20,7 +20,7 @@ export default async function LoginPage({
 
   const session = await getSession();
   if (session) {
-    redirect("/");
+    redirect("/app");
   }
 
   const params = await searchParams;

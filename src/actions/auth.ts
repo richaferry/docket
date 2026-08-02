@@ -88,7 +88,7 @@ export async function setupAccount(_prev: unknown, formData: FormData): Promise<
   }
 
   await createSession(tenantId, email);
-  redirect("/");
+  redirect("/app");
 }
 
 const loginSchema = z.object({
@@ -146,7 +146,7 @@ export async function login(_prev: unknown, formData: FormData): Promise<AuthAct
     .set({ failedLoginAttempts: 0, loginLockedUntil: null })
     .where(eq(tenants.id, tenant.id));
   await createSession(tenant.id, tenant.adminEmail);
-  redirect("/");
+  redirect("/app");
 }
 
 const registerSchema = z.object({
