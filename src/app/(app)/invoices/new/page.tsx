@@ -14,8 +14,8 @@ export default async function NewInvoicePage({
   searchParams: Promise<{ clientId?: string }>;
 }) {
   const { clientId } = await searchParams;
-  const allClients = db.select().from(clients).orderBy(desc(clients.createdAt)).all();
-  const settings = getSettings();
+  const allClients = await db.select().from(clients).orderBy(desc(clients.createdAt));
+  const settings = await getSettings();
 
   return (
     <div>

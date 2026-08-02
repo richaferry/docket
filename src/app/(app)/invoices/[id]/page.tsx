@@ -14,22 +14,20 @@ import { PaymentForm, PaymentList } from "./payment-form";
 
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const invoice = db.select().from(invoices).where(eq(invoices.id, id)).get();
+  const invoice = (await db.select().from(invoices).where(eq(invoices.id, id)).limit(1))[0];
   if (!invoice) notFound();
 
-  const client = db.select().from(clients).where(eq(clients.id, invoice.clientId)).get();
-  const items = db
+  const client = (await db.select().from(clients).where(eq(clients.id, invoice.clientId)).limit(1))[0];
+  const items = await db
     .select()
     .from(invoiceItems)
     .where(eq(invoiceItems.invoiceId, id))
-    .orderBy(asc(invoiceItems.sortOrder))
-    .all();
-  const invoicePayments = db
+    .orderBy(asc(invoiceItems.sortOrder));
+  const invoicePayments = await db
     .select()
     .from(payments)
     .where(eq(payments.invoiceId, id))
-    .orderBy(desc(payments.paidAt))
-    .all();
+    .orderBy(desc(payments.paidAt));
 
   const displayStatus = getDisplayStatus(invoice);
   const taxable = Math.max(invoice.subtotal - invoice.discount, 0);

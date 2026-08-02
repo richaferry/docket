@@ -4,8 +4,12 @@ import { isOnboarded } from "@/lib/settings";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginForm } from "./login-form";
 
+// Reads onboarding state + session cookies; must render per-request, not be
+// prerendered at build time (which would hit the database).
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage() {
-  if (!isOnboarded()) {
+  if (!(await isOnboarded())) {
     redirect("/setup");
   }
 

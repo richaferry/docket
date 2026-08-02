@@ -9,8 +9,8 @@ import {
   ChangePasswordForm,
 } from "./forms";
 
-export default function SettingsPage() {
-  const settings = getSettings();
+export default async function SettingsPage() {
+  const settings = await getSettings();
   const publicUrl = getPublicUrl();
 
   return (

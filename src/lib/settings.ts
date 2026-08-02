@@ -7,25 +7,34 @@ export type Settings = typeof settings.$inferSelect;
 
 let cached: Settings | null = null;
 
-export function getSettings(): Settings {
+export async function getSettings(): Promise<Settings> {
   if (cached) return cached;
 
-  const existing = db.select().from(settings).where(eq(settings.id, 1)).get();
-  if (existing) {
-    cached = existing;
-    return existing;
+  const existing = await db.select().from(settings).where(eq(settings.id, 1)).limit(1);
+  const row = existing[0];
+  if (row) {
+    cached = row;
+    return row;
   }
 
   const authSecret = randomBytes(32).toString("hex");
-  db.insert(settings).values({ id: 1, authSecret }).run();
-  const created = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-  cached = created;
-  return created;
+  // Build-time prerendering runs several pages concurrently across workers;
+  // each may find no row and race to insert. onConflictDoNothing keeps the
+  // losers from crashing — they just re-select the winner's row.
+  await db
+    .insert(settings)
+    .values({ id: 1, authSecret })
+    .onConflictDoNothing();
+  const created = await db.select().from(settings).where(eq(settings.id, 1)).limit(1);
+  cached = created[0]!;
+  return cached;
 }
 
-export function updateSettings(patch: Partial<Omit<Settings, "id" | "authSecret">>): Settings {
-  getSettings();
-  db.update(settings).set(patch).where(eq(settings.id, 1)).run();
+export async function updateSettings(
+  patch: Partial<Omit<Settings, "id" | "authSecret">>,
+): Promise<Settings> {
+  await getSettings();
+  await db.update(settings).set(patch).where(eq(settings.id, 1));
   cached = null;
   return getSettings();
 }
@@ -34,7 +43,7 @@ export function invalidateSettingsCache() {
   cached = null;
 }
 
-export function isOnboarded(): boolean {
-  const s = getSettings();
+export async function isOnboarded(): Promise<boolean> {
+  const s = await getSettings();
   return Boolean(s.adminEmail && s.adminPasswordHash);
 }

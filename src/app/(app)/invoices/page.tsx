@@ -27,8 +27,8 @@ export default async function InvoicesPage({
   const { status } = await searchParams;
   const active = (status as DisplayStatus | undefined) ?? "all";
 
-  const allInvoices = db.select().from(invoices).orderBy(desc(invoices.issueDate)).all();
-  const allClients = db.select().from(clients).all();
+  const allInvoices = await db.select().from(invoices).orderBy(desc(invoices.issueDate));
+  const allClients = await db.select().from(clients);
   const clientById = new Map(allClients.map((c) => [c.id, c]));
 
   const filtered = allInvoices.filter((invoice) => {

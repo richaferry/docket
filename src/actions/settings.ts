@@ -26,7 +26,7 @@ export async function updateBusinessProfile(_prev: unknown, formData: FormData) 
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  updateSettings(parsed.data);
+  await updateSettings(parsed.data);
   revalidatePath("/settings");
   return { error: null, success: true };
 }
@@ -58,7 +58,7 @@ export async function updateInvoiceDefaults(_prev: unknown, formData: FormData) 
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  updateSettings(parsed.data);
+  await updateSettings(parsed.data);
   revalidatePath("/settings");
   return { error: null, success: true };
 }
@@ -105,16 +105,16 @@ export async function updateEmailSettings(_prev: unknown, formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const current = getSettings();
+  const current = await getSettings();
 
   if (parsed.data.emailProvider === "smtp") {
     const smtpPass = parsed.data.smtpPass || current.smtpPass;
     if (!smtpPass) return { error: "SMTP password is required." };
-    updateSettings({ ...parsed.data, smtpPass });
+    await updateSettings({ ...parsed.data, smtpPass });
   } else {
     const mailanvilApiKey = parsed.data.mailanvilApiKey || current.mailanvilApiKey;
     if (!mailanvilApiKey) return { error: "API key is required." };
-    updateSettings({ ...parsed.data, mailanvilApiKey });
+    await updateSettings({ ...parsed.data, mailanvilApiKey });
   }
 
   revalidatePath("/settings");
@@ -133,7 +133,7 @@ export async function sendTestEmail(_prev: unknown, formData: FormData) {
   }
   const to = parsed.data.testEmailTo;
 
-  const settings = getSettings();
+  const settings = await getSettings();
   try {
     await sendMail({
       to,
@@ -166,11 +166,11 @@ export async function changePassword(_prev: unknown, formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const settings = getSettings();
+  const settings = await getSettings();
   if (!settings.adminPasswordHash || !verifyPassword(parsed.data.currentPassword, settings.adminPasswordHash)) {
     return { error: "Current password is incorrect." };
   }
 
-  updateSettings({ adminPasswordHash: hashPassword(parsed.data.newPassword) });
+  await updateSettings({ adminPasswordHash: hashPassword(parsed.data.newPassword) });
   return { error: null, success: true };
 }

@@ -10,10 +10,10 @@ import { formatMoney } from "@/lib/utils";
 import { sumOutstanding } from "@/lib/invoices";
 import { Users } from "lucide-react";
 
-export default function ClientsPage() {
-  const settings = getSettings();
-  const allClients = db.select().from(clients).orderBy(desc(clients.createdAt)).all();
-  const allInvoices = db.select().from(invoices).all();
+export default async function ClientsPage() {
+  const settings = await getSettings();
+  const allClients = await db.select().from(clients).orderBy(desc(clients.createdAt));
+  const allInvoices = await db.select().from(invoices);
 
   return (
     <div>

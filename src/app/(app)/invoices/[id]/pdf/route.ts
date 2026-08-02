@@ -8,10 +8,10 @@ import { requireSession } from "@/lib/auth";
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   await requireSession();
   const { id } = await params;
-  const invoice = db.select().from(invoices).where(eq(invoices.id, id)).get();
+  const invoice = (await db.select().from(invoices).where(eq(invoices.id, id)).limit(1))[0];
   if (!invoice) return new Response("Not found", { status: 404 });
 
-  const data = buildInvoicePdfData(id);
+  const data = await buildInvoicePdfData(id);
   const buffer = await renderInvoicePdf(data);
 
   return new Response(new Uint8Array(buffer), {

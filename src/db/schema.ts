@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { pgTable, text, timestamp, integer, doublePrecision, boolean } from "drizzle-orm/pg-core";
 
-export const clients = sqliteTable("clients", {
+export const clients = pgTable("clients", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   company: text("company"),
@@ -12,15 +12,15 @@ export const clients = sqliteTable("clients", {
     .notNull()
     .default("lead"),
   notes: text("notes"),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
-    .default(sql`(unixepoch('subsec') * 1000)`),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .default(sql`now()`),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
-    .default(sql`(unixepoch('subsec') * 1000)`),
+    .default(sql`now()`),
 });
 
-export const activities = sqliteTable("activities", {
+export const activities = pgTable("activities", {
   id: text("id").primaryKey(),
   clientId: text("client_id")
     .notNull()
@@ -38,12 +38,12 @@ export const activities = sqliteTable("activities", {
     ],
   }).notNull(),
   content: text("content").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
-    .default(sql`(unixepoch('subsec') * 1000)`),
+    .default(sql`now()`),
 });
 
-export const invoices = sqliteTable("invoices", {
+export const invoices = pgTable("invoices", {
   id: text("id").primaryKey(),
   publicId: text("public_id").notNull().unique(),
   number: text("number").notNull().unique(),
@@ -55,59 +55,59 @@ export const invoices = sqliteTable("invoices", {
   })
     .notNull()
     .default("draft"),
-  issueDate: integer("issue_date", { mode: "timestamp_ms" }).notNull(),
-  dueDate: integer("due_date", { mode: "timestamp_ms" }).notNull(),
+  issueDate: timestamp("issue_date", { withTimezone: true }).notNull(),
+  dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
   paymentTerms: text("payment_terms").notNull().default("net_14"),
   currency: text("currency").notNull().default("USD"),
   taxLabel: text("tax_label").notNull().default("Tax"),
-  taxRate: real("tax_rate").notNull().default(0),
-  discount: real("discount").notNull().default(0),
-  subtotal: real("subtotal").notNull().default(0),
-  total: real("total").notNull().default(0),
-  amountPaid: real("amount_paid").notNull().default(0),
+  taxRate: doublePrecision("tax_rate").notNull().default(0),
+  discount: doublePrecision("discount").notNull().default(0),
+  subtotal: doublePrecision("subtotal").notNull().default(0),
+  total: doublePrecision("total").notNull().default(0),
+  amountPaid: doublePrecision("amount_paid").notNull().default(0),
   notes: text("notes"),
   terms: text("terms"),
-  sentAt: integer("sent_at", { mode: "timestamp_ms" }),
-  paidAt: integer("paid_at", { mode: "timestamp_ms" }),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
-    .default(sql`(unixepoch('subsec') * 1000)`),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .default(sql`now()`),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
-    .default(sql`(unixepoch('subsec') * 1000)`),
+    .default(sql`now()`),
 });
 
-export const payments = sqliteTable("payments", {
+export const payments = pgTable("payments", {
   id: text("id").primaryKey(),
   invoiceId: text("invoice_id")
     .notNull()
     .references(() => invoices.id, { onDelete: "cascade" }),
-  amount: real("amount").notNull(),
-  paidAt: integer("paid_at", { mode: "timestamp_ms" }).notNull(),
+  amount: doublePrecision("amount").notNull(),
+  paidAt: timestamp("paid_at", { withTimezone: true }).notNull(),
   note: text("note"),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
-    .default(sql`(unixepoch('subsec') * 1000)`),
+    .default(sql`now()`),
 });
 
-export const invoiceItems = sqliteTable("invoice_items", {
+export const invoiceItems = pgTable("invoice_items", {
   id: text("id").primaryKey(),
   invoiceId: text("invoice_id")
     .notNull()
     .references(() => invoices.id, { onDelete: "cascade" }),
   description: text("description").notNull(),
-  quantity: real("quantity").notNull().default(1),
-  unitPrice: real("unit_price").notNull().default(0),
+  quantity: doublePrecision("quantity").notNull().default(1),
+  unitPrice: doublePrecision("unit_price").notNull().default(0),
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
-export const settings = sqliteTable("settings", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const settings = pgTable("settings", {
+  id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
   authSecret: text("auth_secret").notNull(),
   adminEmail: text("admin_email"),
   adminPasswordHash: text("admin_password_hash"),
   failedLoginAttempts: integer("failed_login_attempts").notNull().default(0),
-  loginLockedUntil: integer("login_locked_until", { mode: "timestamp_ms" }),
+  loginLockedUntil: timestamp("login_locked_until", { withTimezone: true }),
 
   businessName: text("business_name").notNull().default(""),
   businessEmail: text("business_email").notNull().default(""),
@@ -117,7 +117,7 @@ export const settings = sqliteTable("settings", {
 
   paymentInstructions: text("payment_instructions").notNull().default(""),
   taxLabel: text("tax_label").notNull().default("Tax"),
-  defaultTaxRate: real("default_tax_rate").notNull().default(0),
+  defaultTaxRate: doublePrecision("default_tax_rate").notNull().default(0),
   invoicePrefix: text("invoice_prefix").notNull().default("INV-"),
   nextInvoiceNumber: integer("next_invoice_number").notNull().default(1),
   currency: text("currency").notNull().default("USD"),
@@ -130,7 +130,7 @@ export const settings = sqliteTable("settings", {
 
   smtpHost: text("smtp_host"),
   smtpPort: integer("smtp_port"),
-  smtpSecure: integer("smtp_secure", { mode: "boolean" }).notNull().default(false),
+  smtpSecure: boolean("smtp_secure").notNull().default(false),
   smtpUser: text("smtp_user"),
   smtpPass: text("smtp_pass"),
   fromName: text("from_name"),

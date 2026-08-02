@@ -6,3 +6,10 @@ export function getPublicUrl(): string | null {
   if (!raw) return null;
   return raw.replace(/\/$/, "");
 }
+
+// Postgres connection string (Neon pooled URL in production, a local or
+// container Postgres in dev). Defaults to a local Postgres so the module can
+// load without configuration; actual queries still require a reachable DB.
+export function getDatabaseUrl(): string {
+  return process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/postgres";
+}
