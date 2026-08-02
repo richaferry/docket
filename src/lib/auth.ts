@@ -1,8 +1,10 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-import { SignJWT, jwtVerify } from "jose";
+import { SignJWT, decodeJwt, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getSettings } from "@/lib/settings";
+import { db } from "@/db";
+import { tenants } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 const SESSION_COOKIE = "session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 30; // 30 days
@@ -22,17 +24,37 @@ export function verifyPassword(password: string, stored: string): boolean {
   return timingSafeEqual(derived, expected);
 }
 
-async function getSecretKey() {
-  const { authSecret } = await getSettings();
-  return new TextEncoder().encode(authSecret);
+async function getTenantSecret(tenantId: string): Promise<Uint8Array | null> {
+  const row = (await db.select().from(tenants).where(eq(tenants.id, tenantId)).limit(1))[0];
+  if (!row) return null;
+  return new TextEncoder().encode(row.authSecret);
 }
 
-export async function createSession(email: string) {
+// Sessions are signed with the tenant's own auth secret, so we look up the
+// tenant by the token's unverified `sub` claim to fetch the right key before
+// verifying. A forged `sub` only causes verification to fail against the
+// wrong (real) secret — the attacker never learns it.
+async function getSessionSecretKey(token: string): Promise<Uint8Array | null> {
+  let sub: string | undefined;
+  try {
+    sub = decodeJwt(token).sub;
+  } catch {
+    return null;
+  }
+  if (!sub) return null;
+  return getTenantSecret(sub);
+}
+
+export async function createSession(tenantId: string, email: string) {
+  const secret = await getTenantSecret(tenantId);
+  if (!secret) throw new Error("Tenant not found");
+
   const token = await new SignJWT({ email })
     .setProtectedHeader({ alg: "HS256" })
+    .setSubject(tenantId)
     .setIssuedAt()
     .setExpirationTime(`${SESSION_DURATION_SECONDS}s`)
-    .sign(await getSecretKey());
+    .sign(secret);
 
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
@@ -49,22 +71,18 @@ export async function destroySession() {
   store.delete(SESSION_COOKIE);
 }
 
-export async function getSession(): Promise<{ email: string } | null> {
+export async function getSession(): Promise<{ tenantId: string; email: string } | null> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, await getSecretKey());
-    return { email: payload.email as string };
-  } catch {
-    return null;
-  }
-}
-
-export async function verifySessionToken(token: string, secret: Uint8Array) {
+  const secret = await getSessionSecretKey(token);
+  if (!secret) return null;
   try {
     const { payload } = await jwtVerify(token, secret);
-    return { email: payload.email as string };
+    const tenantId = payload.sub;
+    const email = payload.email;
+    if (typeof tenantId !== "string" || typeof email !== "string") return null;
+    return { tenantId, email };
   } catch {
     return null;
   }

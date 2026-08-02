@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getSession, requireSession } from "@/lib/auth";
 import { isOnboarded, getSettings } from "@/lib/settings";
 import { Sidebar } from "@/components/nav/sidebar";
 
@@ -19,7 +19,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect("/login");
   }
 
-  const settings = await getSettings();
+  const { tenantId } = await requireSession();
+  const settings = await getSettings(tenantId);
 
   return (
     <div className="flex min-h-screen w-full flex-col md:flex-row">

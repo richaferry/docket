@@ -1,7 +1,7 @@
 "use server";
 
 import { nanoid } from "nanoid";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -32,38 +32,50 @@ function parseClientForm(formData: FormData) {
 }
 
 export async function createClient(_prev: unknown, formData: FormData) {
-  await requireSession();
+  const { tenantId } = await requireSession();
   const parsed = parseClientForm(formData);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
   const id = nanoid();
-  await db.insert(clients).values({ id, ...parsed.data });
+  await db.insert(clients).values({ id, tenantId, ...parsed.data });
 
-  await db.insert(activities).values({ id: nanoid(), clientId: id, type: "note", content: "Client added." });
+  await db
+    .insert(activities)
+    .values({ id: nanoid(), tenantId, clientId: id, type: "note", content: "Client added." });
 
   revalidatePath("/clients");
   redirect(`/clients/${id}`);
 }
 
 export async function updateClient(id: string, _prev: unknown, formData: FormData) {
-  await requireSession();
+  const { tenantId } = await requireSession();
   const parsed = parseClientForm(formData);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const existing = (await db.select().from(clients).where(eq(clients.id, id)).limit(1))[0];
+  const existing = (
+    await db
+      .select()
+      .from(clients)
+      .where(and(eq(clients.id, id), eq(clients.tenantId, tenantId)))
+      .limit(1)
+  )[0];
   if (!existing) return { error: "Client not found" };
 
-  await db.update(clients).set({ ...parsed.data, updatedAt: new Date() }).where(eq(clients.id, id));
+  await db
+    .update(clients)
+    .set({ ...parsed.data, updatedAt: new Date() })
+    .where(and(eq(clients.id, id), eq(clients.tenantId, tenantId)));
 
   if (existing.status !== parsed.data.status) {
     await db
       .insert(activities)
       .values({
         id: nanoid(),
+        tenantId,
         clientId: id,
         type: "status_change",
         content: `Status changed from ${existing.status} to ${parsed.data.status}.`,
@@ -81,7 +93,7 @@ const activitySchema = z.object({
 });
 
 export async function addActivity(clientId: string, _prev: unknown, formData: FormData) {
-  await requireSession();
+  const { tenantId } = await requireSession();
   const parsed = activitySchema.safeParse({
     type: formData.get("type"),
     content: formData.get("content"),
@@ -90,16 +102,20 @@ export async function addActivity(clientId: string, _prev: unknown, formData: Fo
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  await db.insert(activities).values({ id: nanoid(), clientId, ...parsed.data });
+  await db
+    .insert(activities)
+    .values({ id: nanoid(), tenantId, clientId, ...parsed.data });
 
   revalidatePath(`/clients/${clientId}`);
   return { error: null, success: true };
 }
 
 export async function deleteClient(id: string) {
-  await requireSession();
+  const { tenantId } = await requireSession();
   try {
-    await db.delete(clients).where(eq(clients.id, id));
+    await db
+      .delete(clients)
+      .where(and(eq(clients.id, id), eq(clients.tenantId, tenantId)));
   } catch {
     return { error: "This client has invoices on file and can't be deleted. Archive them instead." };
   }

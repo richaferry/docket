@@ -1,9 +1,10 @@
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { StickyNote, Phone, Mail, Users2, ArrowRightLeft, Send, CheckCircle2, Banknote } from "lucide-react";
 import { db } from "@/db";
 import { clients, activities, invoices } from "@/db/schema";
+import { requireSession } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { LinkButton } from "@/components/ui/button";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
@@ -25,19 +26,26 @@ const ACTIVITY_ICON = {
 
 export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const client = (await db.select().from(clients).where(eq(clients.id, id)).limit(1))[0];
+  const { tenantId } = await requireSession();
+  const client = (
+    await db
+      .select()
+      .from(clients)
+      .where(and(eq(clients.id, id), eq(clients.tenantId, tenantId)))
+      .limit(1)
+  )[0];
   if (!client) notFound();
 
   const timeline = await db
     .select()
     .from(activities)
-    .where(eq(activities.clientId, id))
+    .where(and(eq(activities.clientId, id), eq(activities.tenantId, tenantId)))
     .orderBy(desc(activities.createdAt));
 
   const clientInvoices = await db
     .select()
     .from(invoices)
-    .where(eq(invoices.clientId, id))
+    .where(and(eq(invoices.clientId, id), eq(invoices.tenantId, tenantId)))
     .orderBy(desc(invoices.issueDate));
 
   return (

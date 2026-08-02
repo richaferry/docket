@@ -1,8 +1,9 @@
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
 import { clients, invoices } from "@/db/schema";
 import { getSettings } from "@/lib/settings";
+import { requireSession } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { LinkButton } from "@/components/ui/button";
 import { Badge, CLIENT_STATUS_TONE } from "@/components/ui/badge";
@@ -11,9 +12,17 @@ import { sumOutstanding } from "@/lib/invoices";
 import { Users } from "lucide-react";
 
 export default async function ClientsPage() {
-  const settings = await getSettings();
-  const allClients = await db.select().from(clients).orderBy(desc(clients.createdAt));
-  const allInvoices = await db.select().from(invoices);
+  const { tenantId } = await requireSession();
+  const settings = await getSettings(tenantId);
+  const allClients = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.tenantId, tenantId))
+    .orderBy(desc(clients.createdAt));
+  const allInvoices = await db
+    .select()
+    .from(invoices)
+    .where(eq(invoices.tenantId, tenantId));
 
   return (
     <div>

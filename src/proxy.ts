@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/setup"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/setup",
+  "/register",
+  "/verify-email",
+  "/forgot-password",
+  "/reset-password",
+];
 
 function isPublic(pathname: string) {
   if (PUBLIC_PATHS.includes(pathname)) return true;

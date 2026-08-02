@@ -1,8 +1,9 @@
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
 import { invoices, clients, activities, payments } from "@/db/schema";
 import { getSettings } from "@/lib/settings";
+import { requireSession } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { LinkButton } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
@@ -32,12 +33,21 @@ const ACTIVITY_ICON = {
 };
 
 export default async function DashboardPage() {
-  const settings = await getSettings();
-  const allInvoices = await db.select().from(invoices).orderBy(desc(invoices.issueDate));
-  const allClients = await db.select().from(clients);
+  const { tenantId } = await requireSession();
+  const settings = await getSettings(tenantId);
+  const allInvoices = await db
+    .select()
+    .from(invoices)
+    .where(eq(invoices.tenantId, tenantId))
+    .orderBy(desc(invoices.issueDate));
+  const allClients = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.tenantId, tenantId));
   const recentActivity = await db
     .select()
     .from(activities)
+    .where(eq(activities.tenantId, tenantId))
     .orderBy(desc(activities.createdAt))
     .limit(8);
 
@@ -54,7 +64,10 @@ export default async function DashboardPage() {
   const now = new Date();
   // Actual cash collected this month, not just invoices that reached "paid" —
   // a partial payment should count toward revenue the moment it's received.
-  const allPayments = await db.select().from(payments);
+  const allPayments = await db
+    .select()
+    .from(payments)
+    .where(eq(payments.tenantId, tenantId));
   const paidThisMonth = allPayments
     .filter(
       (p) =>

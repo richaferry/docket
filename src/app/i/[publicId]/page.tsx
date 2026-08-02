@@ -27,7 +27,7 @@ export default async function PublicInvoicePage({
     .where(eq(invoiceItems.invoiceId, invoice.id))
     .orderBy(asc(invoiceItems.sortOrder));
 
-  const settings = await getSettings();
+  const settings = await getSettings(invoice.tenantId);
   const displayStatus = getDisplayStatus(invoice);
   const taxable = Math.max(invoice.subtotal - invoice.discount, 0);
   const taxAmount = taxable * (invoice.taxRate / 100);

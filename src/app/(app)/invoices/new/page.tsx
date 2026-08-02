@@ -1,7 +1,8 @@
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { clients } from "@/db/schema";
 import { getSettings } from "@/lib/settings";
+import { requireSession } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { createInvoice } from "@/actions/invoices";
 import { todayISO, daysFromNowISO } from "@/lib/utils";
@@ -14,8 +15,13 @@ export default async function NewInvoicePage({
   searchParams: Promise<{ clientId?: string }>;
 }) {
   const { clientId } = await searchParams;
-  const allClients = await db.select().from(clients).orderBy(desc(clients.createdAt));
-  const settings = await getSettings();
+  const { tenantId } = await requireSession();
+  const allClients = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.tenantId, tenantId))
+    .orderBy(desc(clients.createdAt));
+  const settings = await getSettings(tenantId);
 
   return (
     <div>

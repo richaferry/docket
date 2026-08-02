@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { invoices } from "@/db/schema";
 import { buildInvoicePdfData } from "@/lib/invoices";
@@ -6,9 +6,15 @@ import { renderInvoicePdf } from "@/lib/pdf/invoice-document";
 import { requireSession } from "@/lib/auth";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  await requireSession();
+  const { tenantId } = await requireSession();
   const { id } = await params;
-  const invoice = (await db.select().from(invoices).where(eq(invoices.id, id)).limit(1))[0];
+  const invoice = (
+    await db
+      .select()
+      .from(invoices)
+      .where(and(eq(invoices.id, id), eq(invoices.tenantId, tenantId)))
+      .limit(1)
+  )[0];
   if (!invoice) return new Response("Not found", { status: 404 });
 
   const data = await buildInvoicePdfData(id);

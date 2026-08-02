@@ -22,8 +22,8 @@ type SendMailOptions = {
   attachments?: { filename: string; content: Buffer; url?: string }[];
 };
 
-export async function sendMail(options: SendMailOptions) {
-  const settings = await getSettings();
+export async function sendMail(tenantId: string, options: SendMailOptions) {
+  const settings = await getSettings(tenantId);
 
   if (settings.emailProvider === "mailanvil") {
     return sendViaMailAnvil(options, settings);
