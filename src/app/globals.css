@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --paper: #f6f1e7;
-  --paper-raised: #fffdf8;
-  --ink: #211d16;
-  --ink-muted: #6b6455;
-  --line: #e3dac4;
+  --paper: #e9f1f8;
+  --paper-raised: #f7fafd;
+  --ink: #16303f;
+  --ink-muted: #5a6e80;
+  --line: #cfdcea;
 
-  --accent: #a84328;
-  --accent-ink: #fff8f2;
-  --accent-soft: #f1ded4;
+  --accent: #2e6da3;
+  --accent-ink: #f6fafd;
+  --accent-soft: #d6e5f4;
 
-  --success: #2f6f4e;
-  --success-soft: #e2ecdf;
-  --warning: #80641f;
-  --warning-soft: #f2ead1;
-  --danger: #af2c3e;
-  --danger-soft: #f2dbdf;
-  --neutral-soft: #ece6d6;
+  --success: #2f8068;
+  --success-soft: #dceee5;
+  --warning: #9a7a24;
+  --warning-soft: #f2ecd9;
+  --danger: #b3405a;
+  --danger-soft: #f5e0e5;
+  --neutral-soft: #dfe9f2;
 
   --radius: 0.375rem;
 
@@ -28,23 +28,23 @@
    explicitly picked "light" via the theme toggle (data-theme="light"). */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #17140d;
-    --paper-raised: #221e15;
-    --ink: #ece4d3;
-    --ink-muted: #a89d87;
-    --line: #35301f;
+    --paper: #0e1720;
+    --paper-raised: #17242f;
+    --ink: #e4edf5;
+    --ink-muted: #8fa4b8;
+    --line: #24354a;
 
-    --accent: #e0754f;
-    --accent-ink: #1c0f09;
-    --accent-soft: #3a2015;
+    --accent: #6ea8e0;
+    --accent-ink: #0b1a26;
+    --accent-soft: #1c3347;
 
-    --success: #7bbd94;
-    --success-soft: #1e2c22;
-    --warning: #d9b654;
-    --warning-soft: #2e2712;
-    --danger: #ea5570;
-    --danger-soft: #34171e;
-    --neutral-soft: #2a2519;
+    --success: #7cc4a6;
+    --success-soft: #173026;
+    --warning: #d9c26a;
+    --warning-soft: #30291a;
+    --danger: #ea6b80;
+    --danger-soft: #381d24;
+    --neutral-soft: #1c2b38;
 
     color-scheme: dark;
   }
@@ -52,23 +52,23 @@
 
 /* Explicit dark mode, chosen via the theme toggle regardless of system pref. */
 :root[data-theme="dark"] {
-  --paper: #17140d;
-  --paper-raised: #221e15;
-  --ink: #ece4d3;
-  --ink-muted: #a89d87;
-  --line: #35301f;
+  --paper: #0e1720;
+  --paper-raised: #17242f;
+  --ink: #e4edf5;
+  --ink-muted: #8fa4b8;
+  --line: #24354a;
 
-  --accent: #e0754f;
-  --accent-ink: #1c0f09;
-  --accent-soft: #3a2015;
+  --accent: #6ea8e0;
+  --accent-ink: #0b1a26;
+  --accent-soft: #1c3347;
 
-  --success: #7bbd94;
-  --success-soft: #1e2c22;
-  --warning: #d9b654;
-  --warning-soft: #2e2712;
-  --danger: #ea5570;
-  --danger-soft: #34171e;
-  --neutral-soft: #2a2519;
+  --success: #7cc4a6;
+  --success-soft: #173026;
+  --warning: #d9c26a;
+  --warning-soft: #30291a;
+  --danger: #ea6b80;
+  --danger-soft: #381d24;
+  --neutral-soft: #1c2b38;
 
   color-scheme: dark;
 }

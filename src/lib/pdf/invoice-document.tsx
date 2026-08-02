@@ -1,9 +1,9 @@
 import { Document, Page, Text, View, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
 
-const INK = "#211d16";
-const MUTED = "#6b6455";
-const LINE = "#e3dac4";
-const ACCENT = "#b7492b";
+const INK = "#16303f";
+const MUTED = "#5a6e80";
+const LINE = "#cfdcea";
+const ACCENT = "#2e6da3";
 
 const styles = StyleSheet.create({
   page: { padding: 48, fontSize: 10, color: INK, fontFamily: "Helvetica" },
