@@ -1,0 +1,27 @@
+# Development environment: hot-reloads on your host source changes.
+#
+#   cp .env.example .env
+#   docker compose -f docker-compose.dev.yml up --build
+services:
+  docket:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: docket:dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - PUBLIC_URL=${PUBLIC_URL:-http://localhost:3000}
+    volumes:
+      # Live source — edits on the host hot-reload inside the container.
+      - .:/app
+      # Keep container-installed deps/build artifacts (don't shadow with host).
+      - /app/node_modules
+      - /app/.next
+      # SQLite database survives container restarts.
+      - docket-data:/app/data
+
+volumes:
+  docket-data:
