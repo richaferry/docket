@@ -1,5 +1,5 @@
 # Development image: hot-reload via `next dev` with the host source mounted in.
-FROM node:22-bookworm-slim
+FROM node:24-bookworm-slim
 
 WORKDIR /app
 
