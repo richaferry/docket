@@ -23,7 +23,7 @@ function HeroMockup() {
       />
 
       <div
-        className="anim-float absolute -right-3 -top-7 z-10 flex items-center gap-2 rounded-full border border-line bg-paper-raised px-4 py-2 shadow-[0_14px_34px_-14px_rgba(22,48,63,0.4)]"
+        className="anim-float absolute -right-3 -top-7 z-10 flex items-center gap-2 rounded-full border border-line bg-paper-raised px-4 py-2 shadow-[0_14px_34px_-14px_rgba(27,42,33,0.4)]"
       >
         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success text-paper-raised">
           <Check size={12} strokeWidth={3} aria-hidden="true" />
@@ -32,7 +32,7 @@ function HeroMockup() {
       </div>
 
       <div
-        className="anim-float absolute -bottom-7 -left-5 z-10 flex items-center gap-3 rounded-2xl border border-line bg-paper-raised px-4 py-3 shadow-[0_14px_34px_-14px_rgba(22,48,63,0.4)]"
+        className="anim-float absolute -bottom-7 -left-5 z-10 flex items-center gap-3 rounded-2xl border border-line bg-paper-raised px-4 py-3 shadow-[0_14px_34px_-14px_rgba(27,42,33,0.4)]"
         style={{ animationDelay: "1.4s" }}
       >
         <span
@@ -47,7 +47,7 @@ function HeroMockup() {
         </span>
       </div>
 
-      <div className="relative rounded-[1.75rem] border border-line bg-paper-raised p-7 shadow-[0_40px_80px_-30px_rgba(22,48,63,0.35)]">
+      <div className="relative rounded-[1.75rem] border border-line bg-paper-raised p-7 shadow-[0_40px_80px_-30px_rgba(27,42,33,0.35)]">
         <div className="flex items-start justify-between">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">Docket</p>

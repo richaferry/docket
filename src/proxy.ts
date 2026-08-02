@@ -8,9 +8,6 @@ const PUBLIC_PATHS = [
   "/verify-email",
   "/forgot-password",
   "/reset-password",
-  "/v1",
-  "/v2",
-  "/v3",
 ];
 
 function isPublic(pathname: string) {

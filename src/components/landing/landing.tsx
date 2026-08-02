@@ -6,8 +6,8 @@ import { LandingWorkflow } from "./landing-workflow";
 import { LandingCta } from "./landing-cta";
 import { LandingFooter } from "./landing-footer";
 
-// The full landing page, reused by / and by the palette preview pages
-// (/v1, /v2, /v3) so each palette can wrap it and override the theme tokens.
+// The full landing page, composed here so it can be wrapped or extended
+// (e.g. by a different header) without duplicating section markup.
 export function Landing() {
   return (
     <>
