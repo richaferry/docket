@@ -1,7 +1,7 @@
 # ----------
 # Dependencies
 # ----------
-FROM node:22-bookworm-slim AS deps
+FROM node:24-bookworm-slim AS deps
 WORKDIR /app
 
 # Build essentials so better-sqlite3 can compile from source as a fallback
@@ -16,7 +16,7 @@ RUN npm ci
 # ----------
 # Build the app (Next.js standalone output)
 # ----------
-FROM node:22-bookworm-slim AS builder
+FROM node:24-bookworm-slim AS builder
 WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -29,7 +29,7 @@ RUN npm run build
 # ----------
 # Production runtime (self-contained, runs as non-root)
 # ----------
-FROM node:22-bookworm-slim AS runner
+FROM node:24-bookworm-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production \
