@@ -48,14 +48,6 @@ export async function updateSettings(
   return getSettings(tenantId);
 }
 
-export function invalidateSettingsCache(tenantId?: string) {
-  if (tenantId) {
-    cache.delete(tenantId);
-  } else {
-    cache.clear();
-  }
-}
-
 // Onboarding has happened once at least one tenant exists.
 export async function isOnboarded(): Promise<boolean> {
   const rows = await db.select({ id: tenants.id }).from(tenants).limit(1);

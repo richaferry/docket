@@ -3,7 +3,7 @@
 import { randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { tenants, settings } from "@/db/schema";
 import {
@@ -12,7 +12,6 @@ import {
   hashPassword,
   verifyPassword,
 } from "@/lib/auth";
-import { isOnboarded } from "@/lib/settings";
 import { isSignupDisabled, getPublicUrl } from "@/lib/env";
 import {
   createEmailVerificationToken,
@@ -47,11 +46,12 @@ const setupSchema = z.object({
   password: z.string().min(8),
 });
 
-export async function setupAccount(_prev: unknown, formData: FormData): Promise<AuthActionResult> {
-  if (await isOnboarded()) {
-    redirect("/login");
-  }
+// Serializes concurrent first-setup requests with a transaction-scoped
+// advisory lock so the isOnboarded check + tenant insert are atomic and only
+// one tenant can ever be created.
+const SETUP_LOCK_KEY = 727003;
 
+export async function setupAccount(_prev: unknown, formData: FormData): Promise<AuthActionResult> {
   const parsed = setupSchema.safeParse({
     businessName: formData.get("businessName"),
     adminEmail: formData.get("adminEmail"),
@@ -66,16 +66,27 @@ export async function setupAccount(_prev: unknown, formData: FormData): Promise<
   const email = normalizeEmail(adminEmail);
 
   const tenantId = `mt-${randomBytes(12).toString("hex")}`;
-  await db.insert(tenants).values({
-    id: tenantId,
-    authSecret: randomBytes(32).toString("hex"),
-    adminEmail: email,
-    adminPasswordHash: hashPassword(password),
-    emailVerified: true,
-    failedLoginAttempts: 0,
-    loginLockedUntil: null,
+  const onboarded = await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(${SETUP_LOCK_KEY})`);
+    const rows = await tx.select({ id: tenants.id }).from(tenants).limit(1);
+    if (rows.length > 0) return true;
+    await tx.insert(tenants).values({
+      id: tenantId,
+      authSecret: randomBytes(32).toString("hex"),
+      adminEmail: email,
+      adminPasswordHash: hashPassword(password),
+      emailVerified: true,
+      failedLoginAttempts: 0,
+      loginLockedUntil: null,
+    });
+    await tx.insert(settings).values({ tenantId, businessName });
+    return false;
   });
-  await db.insert(settings).values({ tenantId, businessName });
+
+  if (onboarded) {
+    redirect("/login");
+  }
+
   await createSession(tenantId, email);
   redirect("/");
 }
