@@ -66,12 +66,12 @@ function Tile({
   return (
     <div
       className={cn(
-        "flex flex-col rounded-[1.75rem] border border-line bg-paper-raised p-8",
+        "flex min-w-0 flex-col rounded-[1.75rem] border border-line bg-paper-raised p-8",
         className,
       )}
     >
       <p className="font-mono text-xs uppercase tracking-[0.18em] text-accent">{kicker}</p>
-      <div className="flex flex-1 flex-col">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-col">{children}</div>
     </div>
   );
 }
@@ -193,9 +193,9 @@ export function LandingFeatures() {
             </Tile>
           </Reveal>
 
-          <Reveal delay={90} className="flex">
+          <Reveal delay={90} className="flex min-w-0">
             <Tile kicker="04 · Payments" className="w-full">
-              <div className="marquee flex flex-1 items-center overflow-hidden rounded-2xl border border-line bg-paper">
+              <div className="marquee flex min-w-0 flex-1 items-center overflow-hidden rounded-2xl border border-line bg-paper">
                 <div className="marquee-track-fast flex w-max">
                   <MonthsHalf />
                   <MonthsHalf hidden />
