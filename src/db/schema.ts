@@ -200,3 +200,18 @@ export const invoiceItems = pgTable(
   },
   (t) => [index("invoice_items_tenant_id_idx").on(t.tenantId)],
 );
+
+// Platform-level operators who can see every tenant (customer) and their
+// clients and invoices. Kept fully separate from tenant sessions: a
+// superadmin has no workspace of their own and logs in via /admin/login
+// (AUTH_SECRET-signed session, distinct from the tenant `session` cookie).
+export const superadmins = pgTable("superadmins", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  failedLoginAttempts: integer("failed_login_attempts").notNull().default(0),
+  loginLockedUntil: timestamp("login_locked_until", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});

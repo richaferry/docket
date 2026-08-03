@@ -5,10 +5,9 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { tenants } from "@/db/schema";
-import { getSettings, updateSettings } from "@/lib/settings";
+import { updateSettings } from "@/lib/settings";
 import { hashPassword, verifyPassword, requireSession } from "@/lib/auth";
 import { CURRENCY_CODES } from "@/lib/currencies";
-import { sendMail, MailerNotConfiguredError, MailProviderError } from "@/lib/mailer";
 
 const businessSchema = z.object({
   businessName: z.string().min(1, "Business name is required"),
@@ -63,93 +62,6 @@ export async function updateInvoiceDefaults(_prev: unknown, formData: FormData) 
 
   await updateSettings(tenantId, parsed.data);
   revalidatePath("/settings");
-  return { error: null, success: true };
-}
-
-const smtpSchema = z.object({
-  emailProvider: z.literal("smtp"),
-  smtpHost: z.string().min(1, "SMTP host is required"),
-  smtpPort: z.coerce.number().int().min(1),
-  smtpSecure: z.coerce.boolean(),
-  smtpUser: z.string().min(1, "SMTP username is required"),
-  // Blank means "keep the existing password" — the field is never
-  // pre-filled with the real secret (see EmailSettingsForm), so a blank
-  // submission is the normal case, not a missing-value error.
-  smtpPass: z.string().optional(),
-  fromName: z.string().optional(),
-  fromEmail: z.string().email("Enter a valid sender email"),
-});
-
-const mailanvilSchema = z.object({
-  emailProvider: z.literal("mailanvil"),
-  mailanvilApiKey: z.string().optional(),
-  fromName: z.string().optional(),
-  fromEmail: z.string().email("Enter a valid sender email"),
-});
-
-const emailSettingsSchema = z.discriminatedUnion("emailProvider", [smtpSchema, mailanvilSchema]);
-
-export async function updateEmailSettings(_prev: unknown, formData: FormData) {
-  const { tenantId } = await requireSession();
-  const emailProvider = formData.get("emailProvider") === "mailanvil" ? "mailanvil" : "smtp";
-
-  const parsed = emailSettingsSchema.safeParse({
-    emailProvider,
-    smtpHost: formData.get("smtpHost"),
-    smtpPort: formData.get("smtpPort"),
-    smtpSecure: formData.get("smtpSecure") === "on",
-    smtpUser: formData.get("smtpUser"),
-    smtpPass: formData.get("smtpPass") || undefined,
-    mailanvilApiKey: formData.get("mailanvilApiKey") || undefined,
-    fromName: formData.get("fromName") || undefined,
-    fromEmail: formData.get("fromEmail"),
-  });
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
-  }
-
-  const current = await getSettings(tenantId);
-
-  if (parsed.data.emailProvider === "smtp") {
-    const smtpPass = parsed.data.smtpPass || current.smtpPass;
-    if (!smtpPass) return { error: "SMTP password is required." };
-    await updateSettings(tenantId, { ...parsed.data, smtpPass });
-  } else {
-    const mailanvilApiKey = parsed.data.mailanvilApiKey || current.mailanvilApiKey;
-    if (!mailanvilApiKey) return { error: "API key is required." };
-    await updateSettings(tenantId, { ...parsed.data, mailanvilApiKey });
-  }
-
-  revalidatePath("/settings");
-  return { error: null, success: true };
-}
-
-const testEmailSchema = z.object({
-  testEmailTo: z.string().email("Enter a valid email address."),
-});
-
-export async function sendTestEmail(_prev: unknown, formData: FormData) {
-  const { tenantId } = await requireSession();
-  const parsed = testEmailSchema.safeParse({ testEmailTo: formData.get("testEmailTo") });
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
-  }
-  const to = parsed.data.testEmailTo;
-
-  const settings = await getSettings(tenantId);
-  try {
-    await sendMail(tenantId, {
-      to,
-      subject: `Test email from ${settings.businessName || "Docket"}`,
-      html: `<p>This is a test email from your Docket workspace. If you got this, sending is working.</p>`,
-    });
-  } catch (err) {
-    if (err instanceof MailerNotConfiguredError || err instanceof MailProviderError) {
-      return { error: err.message };
-    }
-    return { error: "Couldn't send — double check your email provider credentials." };
-  }
-
   return { error: null, success: true };
 }
 
