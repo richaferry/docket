@@ -1,47 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sun, Moon, Monitor, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  applyTheme,
+  useThemePref,
+  type ThemePref,
+} from "@/lib/theme-client";
 
-export type ThemePref = "light" | "dark" | "system";
-
-const THEME_EVENT = "docket-theme-change";
-const THEME_KEY = "theme";
-const COOKIE_MAX_AGE = 365 * 24 * 60 * 60;
+export type { ThemePref };
 
 const OPTIONS: { value: ThemePref; label: string; icon: typeof Sun }[] = [
   { value: "light", label: "Light", icon: Sun },
   { value: "dark", label: "Dark", icon: Moon },
   { value: "system", label: "System", icon: Monitor },
 ];
-
-function getSnapshot(): ThemePref {
-  const stored = localStorage.getItem(THEME_KEY);
-  return stored === "light" || stored === "dark" ? stored : "system";
-}
-
-function subscribe(callback: () => void) {
-  window.addEventListener("storage", callback);
-  window.addEventListener(THEME_EVENT, callback);
-  return () => {
-    window.removeEventListener("storage", callback);
-    window.removeEventListener(THEME_EVENT, callback);
-  };
-}
-
-function apply(value: ThemePref) {
-  if (value === "system") {
-    localStorage.removeItem(THEME_KEY);
-    document.cookie = `${THEME_KEY}=; path=/; max-age=0; samesite=lax`;
-    document.documentElement.removeAttribute("data-theme");
-  } else {
-    localStorage.setItem(THEME_KEY, value);
-    document.cookie = `${THEME_KEY}=${value}; path=/; max-age=${COOKIE_MAX_AGE}; samesite=lax`;
-    document.documentElement.setAttribute("data-theme", value);
-  }
-  window.dispatchEvent(new Event(THEME_EVENT));
-}
 
 export function ThemeToggleMenu({
   initialPref,
@@ -52,7 +26,7 @@ export function ThemeToggleMenu({
   className?: string;
   menuAlign?: "left" | "right";
 }) {
-  const pref = useSyncExternalStore(subscribe, getSnapshot, () => initialPref);
+  const pref = useThemePref(initialPref);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -106,7 +80,7 @@ export function ThemeToggleMenu({
               role="menuitemradio"
               aria-checked={pref === value}
               onClick={() => {
-                apply(value);
+                applyTheme(value);
                 setOpen(false);
               }}
               className={cn(
