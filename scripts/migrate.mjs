@@ -14,7 +14,11 @@ if (existsSync(".env")) {
   process.loadEnvFile(".env");
 }
 
-const url = process.env.DATABASE_URL;
+// Neon exposes a pooled URL (pgbouncer-style) and an unpooled one. Pooled
+// connections can reject multi-statement DDL and advisory locks, so the
+// migration runner prefers the unpooled URL when both are configured; the
+// plain DATABASE_URL (used by local dev, Docker, and CI) remains the fallback.
+const url = process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL;
 if (!url) {
   console.error("DATABASE_URL is required to run migrations.");
   process.exit(1);
