@@ -44,3 +44,6 @@ next-env.d.ts
 # local sqlite database
 /data/
 public/uploads/
+
+# opencode dashboard session data
+/.opencode/
