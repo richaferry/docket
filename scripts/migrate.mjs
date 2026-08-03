@@ -2,9 +2,17 @@
 // database. Kept as a standalone runtime script (not a drizzle-kit command)
 // so it can run from a production standalone image where drizzle-kit isn't
 // installed. Used by `npm run db:migrate`, CI, and the container entrypoint.
+import { existsSync } from "node:fs";
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
+
+// Plain `node` doesn't load .env the way Next.js does, so load it ourselves
+// when present. In the container there is no .env — DATABASE_URL comes from
+// the runtime environment instead.
+if (existsSync(".env")) {
+  process.loadEnvFile(".env");
+}
 
 const url = process.env.DATABASE_URL;
 if (!url) {
