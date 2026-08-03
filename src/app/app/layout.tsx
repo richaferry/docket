@@ -11,7 +11,7 @@ import { Sidebar } from "@/components/nav/sidebar";
 export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const { tenantId } = await requireSession();
+  const { tenantId, email } = await requireSession();
 
   // A signed-in user who hasn't created a workspace yet gets bounced to the
   // workspace step before the dashboard can open.
@@ -24,7 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen w-full flex-col md:flex-row">
-      <Sidebar businessName={settings.businessName} initialPref={initialPref} />
+      <Sidebar businessName={settings.businessName} email={email} initialPref={initialPref} />
       <main id="main-content" tabIndex={-1} className="flex-1 min-w-0">
         {children}
       </main>

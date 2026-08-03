@@ -8,15 +8,14 @@ import {
   Users,
   FileText,
   Settings,
-  LogOut,
   Menu,
   X,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { logout } from "@/actions/auth";
-import { ThemeToggleMenu, type ThemePref } from "@/components/theme-toggle-menu";
+import { AccountMenu } from "@/components/nav/account-menu";
+import type { ThemePref } from "@/lib/theme-client";
 
 const links = [
   { href: "/app", label: "Overview", icon: LayoutDashboard },
@@ -92,25 +91,15 @@ function NavLinks({
   );
 }
 
-function SignOutButton({ collapsed }: { collapsed?: boolean }) {
-  return (
-    <form action={logout}>
-      <button
-        type="submit"
-        title={collapsed ? "Sign out" : undefined}
-        className={cn(
-          "flex w-full items-center gap-2.5 rounded-[var(--radius)] px-3 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-neutral-soft hover:text-ink",
-          collapsed && "justify-center px-0",
-        )}
-      >
-        <LogOut size={16} strokeWidth={2} aria-hidden="true" />
-        <span className={collapsed ? "sr-only" : undefined}>Sign out</span>
-      </button>
-    </form>
-  );
-}
-
-export function Sidebar({ businessName, initialPref }: { businessName: string; initialPref: ThemePref }) {
+export function Sidebar({
+  businessName,
+  email,
+  initialPref,
+}: {
+  businessName: string;
+  email: string;
+  initialPref: ThemePref;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [lastPathname, setLastPathname] = useState(pathname);
@@ -160,7 +149,6 @@ export function Sidebar({ businessName, initialPref }: { businessName: string; i
           <Menu size={20} aria-hidden="true" />
         </button>
         <p className="font-display text-base leading-tight text-ink">{businessName || "Docket"}</p>
-        <ThemeToggleMenu initialPref={initialPref} />
       </div>
 
       {/* Mobile drawer */}
@@ -196,8 +184,9 @@ export function Sidebar({ businessName, initialPref }: { businessName: string; i
               </button>
             </div>
             <NavLinks pathname={pathname} onNavigate={() => setOpen(false)} />
-            <ThemeToggleMenu initialPref={initialPref} menuAlign="left" className="mb-2 self-start" />
-            <SignOutButton />
+            <div className="mt-4 border-t border-line pt-3">
+              <AccountMenu email={email} initialPref={initialPref} />
+            </div>
           </aside>
         </div>
       )}
@@ -205,7 +194,7 @@ export function Sidebar({ businessName, initialPref }: { businessName: string; i
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden shrink-0 flex-col border-r border-line bg-paper py-5 transition-[width] duration-200 md:flex",
+          "hidden shrink-0 flex-col border-r border-line bg-paper py-5 transition-[width] duration-200 md:sticky md:top-0 md:flex md:h-screen",
           collapsed ? "w-16 px-2" : "w-56 px-3",
         )}
       >
@@ -233,9 +222,8 @@ export function Sidebar({ businessName, initialPref }: { businessName: string; i
           </button>
         </div>
         <NavLinks pathname={pathname} collapsed={collapsed} />
-        <div className={cn("mt-4 flex flex-col gap-2", collapsed && "items-center")}>
-          <ThemeToggleMenu initialPref={initialPref} menuAlign="left" />
-          <SignOutButton collapsed={collapsed} />
+        <div className={cn("mt-4 border-t border-line pt-3", collapsed && "flex justify-center")}>
+          <AccountMenu email={email} initialPref={initialPref} collapsed={collapsed} />
         </div>
       </aside>
     </>
