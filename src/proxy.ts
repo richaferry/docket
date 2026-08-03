@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   "/verify-email",
   "/forgot-password",
   "/reset-password",
+  "/admin/login",
 ];
 
 function isPublic(pathname: string) {
@@ -23,15 +24,23 @@ function isPublic(pathname: string) {
 // routes, and the /login page itself for the redirect-away-if-already-logged-in
 // case. Redirecting away from /login based on presence alone would loop
 // forever against an invalid cookie, so this middleware never does that.
+// /admin routes use the separate superadmin cookie (admin_session) — the same
+// presence-only fast-path, with requireSuperadmin() as the real gate.
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const hasSession = request.cookies.has("session");
 
   if (isPublic(pathname)) {
     return NextResponse.next();
   }
 
-  if (!hasSession) {
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    if (!request.cookies.has("admin_session")) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  if (!request.cookies.has("session")) {
     const url = new URL("/login", request.url);
     url.searchParams.set("from", pathname);
     return NextResponse.redirect(url);

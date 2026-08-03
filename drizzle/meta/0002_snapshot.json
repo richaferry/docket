@@ -1,6 +1,6 @@
 {
-  "id": "68ca7d6c-e2b4-493d-98c0-24f526992587",
-  "prevId": "c11be648-a469-4867-bfdd-abeb57c6bba8",
+  "id": "c079396a-2de9-4f4c-a856-b68af4fa304f",
+  "prevId": "68ca7d6c-e2b4-493d-98c0-24f526992587",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -834,6 +834,65 @@
           "nullsNotDistinct": false,
           "columns": [
             "tenant_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.superadmins": {
+      "name": "superadmins",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "failed_login_attempts": {
+          "name": "failed_login_attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "login_locked_until": {
+          "name": "login_locked_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "superadmins_email_unique": {
+          "name": "superadmins_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
           ]
         }
       },

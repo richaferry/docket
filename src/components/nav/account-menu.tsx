@@ -9,17 +9,24 @@ import { ThemeSegmented } from "@/components/theme-segmented";
 import type { ThemePref } from "@/lib/theme-client";
 
 // Vercel-style account control: an avatar button pinned to the bottom of the
-// sidebar that opens a menu (upward) with the workspace admin email, the
+// sidebar that opens a menu (upward) with the account email, the
 // System/Light/Dark theme switch, Settings, and Sign out. Keeps the theme
-// switch reachable when the sidebar is collapsed to icons.
+// switch reachable when the sidebar is collapsed to icons. Shared by the
+// tenant app and the /admin area via the sidebar shell.
 export function AccountMenu({
   email,
   initialPref,
   collapsed = false,
+  subtitle = "Workspace admin",
+  settingsHref = "/app/settings",
+  signOutAction = logout,
 }: {
   email: string;
   initialPref: ThemePref;
   collapsed?: boolean;
+  subtitle?: string;
+  settingsHref?: string;
+  signOutAction?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -76,7 +83,7 @@ export function AccountMenu({
         >
           <div className="border-b border-line px-2.5 py-2">
             <p className="truncate text-xs font-medium text-ink">{email}</p>
-            <p className="text-[11px] text-ink-muted">Workspace admin</p>
+            <p className="text-[11px] text-ink-muted">{subtitle}</p>
           </div>
           <div className="px-2.5 py-2.5">
             <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-muted">
@@ -85,15 +92,17 @@ export function AccountMenu({
             <ThemeSegmented initialPref={initialPref} />
           </div>
           <div className="border-t border-line p-1">
-            <Link
-              href="/app/settings"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm text-ink-muted transition-colors hover:bg-neutral-soft hover:text-ink"
-            >
-              <Settings size={14} aria-hidden="true" />
-              Settings
-            </Link>
-            <form action={logout}>
+            {settingsHref && (
+              <Link
+                href={settingsHref}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm text-ink-muted transition-colors hover:bg-neutral-soft hover:text-ink"
+              >
+                <Settings size={14} aria-hidden="true" />
+                Settings
+              </Link>
+            )}
+            <form action={signOutAction}>
               <button
                 type="submit"
                 className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm text-ink-muted transition-colors hover:bg-neutral-soft hover:text-ink"

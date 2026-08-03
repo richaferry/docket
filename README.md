@@ -16,9 +16,8 @@ place, running on your own machine or server.
   shareable link for clients to view and download their invoice
 - **Dashboard** — outstanding balance, overdue amount, revenue this month,
   recent activity
-- **Settings** — business profile, invoice numbering, default tax rate,
-  payment instructions, and SMTP configured entirely through the UI (no env
-  files to hand-edit)
+- **Settings** — business profile, invoice numbering, default tax rate, and
+  payment instructions
 
 ## Getting started
 
@@ -94,10 +93,13 @@ the server after changing it.
 
 ## Sending invoices by email
 
-Add SMTP credentials under **Settings → Email delivery** (works with a Gmail
-app password, or any SMTP provider). Until that's set, invoices can still be
-created, viewed, and downloaded as PDF — sending just returns a clear error
-telling you to configure it.
+Per-tenant email provider configuration was removed from Settings. Workspaces
+that configured SMTP/MailAnvil before that change can still send; others get a
+clear "email not configured" error on send (invoices can always be created,
+viewed, and downloaded as PDF). A paid per-tenant sending feature — where
+customers set their own from-name/from-email and Docket handles the actual
+mail server on its own subdomain — is designed but not built yet; see
+[`docs/paid-email-sending.md`](docs/paid-email-sending.md).
 
 ## Stack
 
@@ -111,6 +113,9 @@ for all mutations. Containerised with Docker (`Dockerfile`, `Dockerfile.dev`,
 - `npm run dev` — start the dev server
 - `npm run build` / `npm start` — production build & serve
 - `npm run db:generate` — generate a Drizzle migration after changing `src/db/schema.ts`
+- `npm run db:migrate` — apply pending migrations
+- `npm run admin:create -- you@docket.app` — create/update a platform superadmin
+  (accesses the `/admin` area; prompts for a password)
 - `npm run db:studio` — browse the local database
 
 ## Contributing

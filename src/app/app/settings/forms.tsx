@@ -1,16 +1,13 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import {
   updateBusinessProfile,
   updateInvoiceDefaults,
-  updateEmailSettings,
-  sendTestEmail,
   changePassword,
 } from "@/actions/settings";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
-import { cn } from "@/lib/utils";
 import { CURRENCIES } from "@/lib/currencies";
 import { PAYMENT_TERMS } from "@/lib/payment-terms";
 import type { Settings } from "@/lib/settings";
@@ -143,121 +140,6 @@ export function InvoiceDefaultsForm({ settings }: { settings: Settings }) {
         <SavedNote show={state?.success} />
       </div>
     </form>
-  );
-}
-
-export function EmailSettingsForm({ settings }: { settings: Settings }) {
-  const [state, formAction, pending] = useActionState(updateEmailSettings, undefined);
-  const [testState, testAction, testPending] = useActionState(sendTestEmail, undefined);
-  const [provider, setProvider] = useState<"smtp" | "mailanvil">(settings.emailProvider);
-
-  return (
-    <div className="flex flex-col gap-6">
-      <form action={formAction} className="flex flex-col gap-4">
-        <div role="group" aria-label="Email provider" className="flex flex-wrap gap-2">
-          {(["smtp", "mailanvil"] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              aria-pressed={provider === option}
-              onClick={() => setProvider(option)}
-              className={cn(
-                "rounded-[var(--radius)] border px-3 py-1.5 text-sm font-medium transition-colors",
-                provider === option
-                  ? "border-accent bg-accent-soft text-accent"
-                  : "border-line text-ink-muted hover:text-ink",
-              )}
-            >
-              {option === "smtp" ? "SMTP" : "MailAnvil"}
-            </button>
-          ))}
-          <input type="hidden" name="emailProvider" value={provider} />
-        </div>
-
-        {provider === "smtp" ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="SMTP host" htmlFor="smtpHost">
-              <Input id="smtpHost" name="smtpHost" defaultValue={settings.smtpHost ?? ""} placeholder="smtp.gmail.com" />
-            </Field>
-            <Field label="SMTP port" htmlFor="smtpPort">
-              <Input id="smtpPort" name="smtpPort" type="number" defaultValue={settings.smtpPort ?? 587} />
-            </Field>
-            <Field label="SMTP username" htmlFor="smtpUser">
-              <Input id="smtpUser" name="smtpUser" defaultValue={settings.smtpUser ?? ""} />
-            </Field>
-            <Field
-              label="SMTP password"
-              htmlFor="smtpPass"
-              hint={settings.smtpPass ? "Leave blank to keep the current password." : undefined}
-            >
-              <Input
-                id="smtpPass"
-                name="smtpPass"
-                type="password"
-                placeholder={settings.smtpPass ? "••••••••" : ""}
-              />
-            </Field>
-            <Field label="From name" htmlFor="fromName">
-              <Input id="fromName" name="fromName" defaultValue={settings.fromName ?? ""} />
-            </Field>
-            <Field label="From email" htmlFor="fromEmail">
-              <Input id="fromEmail" name="fromEmail" type="email" defaultValue={settings.fromEmail ?? ""} />
-            </Field>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field
-              label="MailAnvil API key"
-              htmlFor="mailanvilApiKey"
-              className="col-span-2"
-              hint={settings.mailanvilApiKey ? "Leave blank to keep the current key." : undefined}
-            >
-              <Input
-                id="mailanvilApiKey"
-                name="mailanvilApiKey"
-                type="password"
-                placeholder={settings.mailanvilApiKey ? "••••••••" : "re_..."}
-              />
-            </Field>
-            <Field label="From name" htmlFor="fromName">
-              <Input id="fromName" name="fromName" defaultValue={settings.fromName ?? ""} />
-            </Field>
-            <Field label="From email" htmlFor="fromEmail" hint="Must be on a domain verified with MailAnvil.">
-              <Input id="fromEmail" name="fromEmail" type="email" defaultValue={settings.fromEmail ?? ""} />
-            </Field>
-          </div>
-        )}
-
-        {provider === "smtp" && (
-          <label className="flex items-center gap-2 text-sm text-ink-muted">
-            <input type="checkbox" name="smtpSecure" defaultChecked={settings.smtpSecure} className="accent-[var(--accent)]" />
-            Use SSL/TLS (port 465)
-          </label>
-        )}
-        {state?.error && <p role="alert" className="text-sm text-danger">{state.error}</p>}
-        <div className="flex items-center gap-3">
-          <Button type="submit" size="sm" disabled={pending}>
-            {pending ? "Saving…" : "Save"}
-          </Button>
-          <SavedNote show={state?.success} />
-        </div>
-      </form>
-
-      <form action={testAction} className="flex flex-col gap-3 border-t border-line pt-4 sm:flex-row sm:items-end">
-        <Field label="Send a test email to" htmlFor="testEmailTo" className="flex-1">
-          <Input id="testEmailTo" name="testEmailTo" type="email" placeholder="you@studio.com" />
-        </Field>
-        <Button type="submit" variant="secondary" size="sm" disabled={testPending}>
-          {testPending ? "Sending…" : "Send test"}
-        </Button>
-      </form>
-      {testState?.error && <p role="alert" className="text-sm text-danger">{testState.error}</p>}
-      {testState?.success && (
-        <p role="status" className="text-sm text-success">
-          Test email sent — check your inbox.
-        </p>
-      )}
-    </div>
   );
 }
 

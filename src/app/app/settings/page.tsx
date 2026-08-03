@@ -6,7 +6,6 @@ import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import {
   BusinessProfileForm,
   InvoiceDefaultsForm,
-  EmailSettingsForm,
   ChangePasswordForm,
 } from "./forms";
 
@@ -34,15 +33,6 @@ export default async function SettingsPage() {
           </CardHeader>
           <CardBody>
             <InvoiceDefaultsForm settings={settings} />
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <h2 className="font-medium text-ink">Email delivery</h2>
-          </CardHeader>
-          <CardBody>
-            <EmailSettingsForm settings={settings} />
           </CardBody>
         </Card>
 
